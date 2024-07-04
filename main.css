@@ -28,6 +28,15 @@
   --drawing-menubar-icon-size: 4rem;
 }
 
+body {
+  padding: 0;
+  margin: 0;
+}
+
+y-demo-drawing {
+  height: 100vh;
+}
+
 #userlist {
   padding-top: 2rem;
   padding-left: 1.6rem;
