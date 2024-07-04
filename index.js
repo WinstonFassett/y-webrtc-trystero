@@ -14791,7 +14791,12 @@ var component = /*#__PURE__*/Object.freeze({
 
 const calculateCoordinateFromEvent = (event, el) => {
   const canvasRect = /** @type {HTMLElement} */ (querySelector(el.shadowRoot, 'canvas')).getBoundingClientRect();
-  return { x: (event.clientX - canvasRect.left) / canvasRect.width, y: (event.clientY - canvasRect.top) / canvasRect.height }
+  const clientX = event.clientX || (event.touches && event.touches[0].clientX);
+  const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+  return {
+    x: (clientX - canvasRect.left) / canvasRect.width,
+    y: (clientY - canvasRect.top) / canvasRect.height
+  };
 };
 
 const drawStart = (coord, el) => {
@@ -14849,6 +14854,7 @@ createComponent('y-demo-drawing', {
      * @param {any} event
      */
     touchstart: (event, el) => {
+      event.preventDefault();
       if (event.touches.length === 1) {
         drawStart(event.touches[0], el);
       }
@@ -14857,13 +14863,17 @@ createComponent('y-demo-drawing', {
     mouseleave: clearCurrPath,
     mouseup: clearCurrPath,
     touchcancel: clearCurrPath,
-    touchend: clearCurrPath,
+    touchend: (event, el) => {
+      event.preventDefault(); // Prevent default behavior
+      clearCurrPath(event, el);
+    },
     mousemove: moveDraw,
     /**
      * @param {any} event
      * @param {any} el
      */
     touchmove: (event, el) => {
+      event.preventDefault();
       if (event.touches.length === 1) {
         moveDraw(event.touches[0], el);
       }
