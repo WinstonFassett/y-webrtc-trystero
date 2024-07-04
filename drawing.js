@@ -1,280 +1,7 @@
-import { f as fromCamelCase, p as parseElement, q as querySelector, e as emitCustomEvent, a as addEventListener, b as assign, k as keys, s as stringify, i as isNaN, c as equalityFlat, d as from, g as querySelectorAll, h as checkNodeType, r as remove, j as parseFragment, l as replaceWith, m as appendChild, n as parse, E as ELEMENT_NODE, Y as YMap, o as YArray, t as drawingContent } from './index2.js';
-
-/* eslint-env browser */
-
-/**
- * @type {CustomElementRegistry}
- */
-const registry = customElements;
-
-/**
- * @param {string} name
- * @param {any} constr
- * @param {ElementDefinitionOptions} [opts]
- */
-const define = (name, constr, opts) => registry.define(name, constr, opts);
-
-const upgradedEventName = 'upgraded';
-const connectedEventName = 'connected';
-const disconnectedEventName = 'disconnected';
-
-/**
- * @param {any} val
- * @param {"json"|"string"|"number"} type
- * @return {string}
- */
-const encodeAttrVal = (val, type) => {
-  if (type === 'json') {
-    val = stringify(val);
-  }
-  return val + ''
-};
-
-/**
- * @param {any} val
- * @param {"json"|"string"|"number"|"bool"} type
- * @return {any}
- */
-const parseAttrVal = (val, type) => {
-  switch (type) {
-    case 'json':
-      return parse(val)
-    case 'number':
-      return Number.parseFloat(val)
-    case 'string':
-      return val
-    case 'bool':
-      return val != null
-    default:
-      return null
-  }
-};
-
-/**
- * @typedef {Object} CONF
- * @property {string?} [CONF.template] Template for the shadow dom.
- * @property {string} [CONF.style] shadow dom style. Is only used when
- * `CONF.template` is defined
- * @property {S} [CONF.state] Initial component state.
- * @property {function(S,S|null,Lib0Component<S>):void} [CONF.onStateChange] Called when
- * the state changes.
- * @property {Object<string,function(any, any):Object>} [CONF.childStates] maps from
- * CSS-selector to transformer function. The first element that matches the
- * CSS-selector receives state updates via the transformer function.
- * @property {Object<string,"json"|"number"|"string"|"bool">} [CONF.attrs]
- * attrs-keys and state-keys should be camelCase, but the DOM uses kebap-case. I.e.
- * `attrs = { myAttr: 4 }` is represeted as `<my-elem my-attr="4" />` in the DOM
- * @property {Object<string, function(CustomEvent, Lib0Component<any>):boolean|void>} [CONF.listeners] Maps from dom-event-name
- * to event listener.
- * @property {function(S, S, Lib0Component<S>):Object<string,string>} [CONF.slots] Fill slots
- * automatically when state changes. Maps from slot-name to slot-html.
- * @template S
- */
-
-/**
- * @template T
- * @param {string} name
- * @param {CONF<T>} cnf
- * @return {typeof Lib0Component}
- */
-const createComponent = (name, { template, style = '', state: defaultState, onStateChange = () => {}, childStates = { }, attrs = {}, listeners = {}, slots = () => ({}) }) => {
-  /**
-   * Maps from camelCase attribute name to kebap-case attribute name.
-   * @type {Object<string,string>}
-   */
-  const normalizedAttrs = {};
-  for (const key in attrs) {
-    normalizedAttrs[fromCamelCase(key, '-')] = key;
-  }
-  const templateElement = template
-    ? /** @type {HTMLTemplateElement} */ (parseElement(`
-      <template>
-        <style>${style}</style>
-        ${template}
-      </template>
-      `))
-    : null;
-
-  class _Lib0Component extends HTMLElement {
-    /**
-     * @param {T} [state]
-     */
-    constructor (state) {
-      super();
-      /**
-       * @type {Array<{d:Lib0Component<T>, s:function(any, any):Object}>}
-       */
-      this._childStates = [];
-      /**
-       * @type {Object<string,string>}
-       */
-      this._slots = {};
-      this._init = false;
-      /**
-       * @type {any}
-       */
-      this._internal = {};
-      /**
-       * @type {any}
-       */
-      this.state = state || null;
-      this.connected = false;
-      // init shadow dom
-      if (templateElement) {
-        const shadow = /** @type {ShadowRoot} */ (this.attachShadow({ mode: 'open' }));
-        shadow.appendChild(templateElement.content.cloneNode(true));
-        // fill child states
-        for (const key in childStates) {
-          this._childStates.push({
-            d: /** @type {Lib0Component<T>} */ (querySelector(/** @type {any} */ (shadow), key)),
-            s: childStates[key]
-          });
-        }
-      }
-      emitCustomEvent(this, upgradedEventName, { bubbles: true });
-    }
-
-    connectedCallback () {
-      this.connected = true;
-      if (!this._init) {
-        this._init = true;
-        const shadow = this.shadowRoot;
-        if (shadow) {
-          addEventListener(shadow, upgradedEventName, event => {
-            this.setState(this.state, true);
-            event.stopPropagation();
-          });
-        }
-        /**
-         * @type {Object<string, any>}
-         */
-        const startState = this.state || assign({}, defaultState);
-        if (attrs) {
-          for (const key in attrs) {
-            const normalizedKey = fromCamelCase(key, '-');
-            const val = parseAttrVal(this.getAttribute(normalizedKey), attrs[key]);
-            if (val) {
-              startState[key] = val;
-            }
-          }
-        }
-        // add event listeners
-        for (const key in listeners) {
-          addEventListener(shadow || this, key, event => {
-            if (listeners[key](/** @type {CustomEvent} */ (event), this) !== false) {
-              event.stopPropagation();
-              event.preventDefault();
-              return false
-            }
-          });
-        }
-        // first setState call
-        this.state = null;
-        this.setState(startState);
-      }
-      emitCustomEvent(/** @type {any} */ (this.shadowRoot || this), connectedEventName, { bubbles: true });
-    }
-
-    disconnectedCallback () {
-      this.connected = false;
-      emitCustomEvent(/** @type {any} */ (this.shadowRoot || this), disconnectedEventName, { bubbles: true });
-      this.setState(null);
-    }
-
-    static get observedAttributes () {
-      return keys(normalizedAttrs)
-    }
-
-    /**
-     * @param {string} name
-     * @param {string} oldVal
-     * @param {string} newVal
-     *
-     * @private
-     */
-    attributeChangedCallback (name, oldVal, newVal) {
-      const curState = /** @type {any} */ (this.state);
-      const camelAttrName = normalizedAttrs[name];
-      const type = attrs[camelAttrName];
-      const parsedVal = parseAttrVal(newVal, type);
-      if (curState && (type !== 'json' || stringify(curState[camelAttrName]) !== newVal) && curState[camelAttrName] !== parsedVal && !isNaN(parsedVal)) {
-        this.updateState({ [camelAttrName]: parsedVal });
-      }
-    }
-
-    /**
-     * @param {any} stateUpdate
-     */
-    updateState (stateUpdate) {
-      this.setState(assign({}, this.state, stateUpdate));
-    }
-
-    /**
-     * @param {any} state
-     */
-    setState (state, forceStateUpdates = false) {
-      const prevState = this.state;
-      this.state = state;
-      if (this._init && (!equalityFlat(state, prevState) || forceStateUpdates)) {
-        // fill slots
-        if (state) {
-          const slotElems = slots(state, prevState, this);
-          for (const key in slotElems) {
-            const slotContent = slotElems[key];
-            if (this._slots[key] !== slotContent) {
-              this._slots[key] = slotContent;
-              const currentSlots = /** @type {Array<any>} */ (key !== 'default' ? from(querySelectorAll(this, `[slot="${key}"]`)) : from(this.childNodes).filter(/** @param {any} child */ child => !checkNodeType(child, ELEMENT_NODE) || !child.hasAttribute('slot')));
-              currentSlots.slice(1).map(remove);
-              const nextSlot = parseFragment(slotContent);
-              if (key !== 'default') {
-                from(nextSlot.children).forEach(c => c.setAttribute('slot', key));
-              }
-              if (currentSlots.length > 0) {
-                replaceWith(currentSlots[0], nextSlot);
-              } else {
-                appendChild(this, nextSlot);
-              }
-            }
-          }
-        }
-        onStateChange(state, prevState, this);
-        if (state != null) {
-          this._childStates.forEach(cnf => {
-            const d = cnf.d;
-            if (d.updateState) {
-              d.updateState(cnf.s(state, this));
-            }
-          });
-        }
-        for (const key in attrs) {
-          const normalizedKey = fromCamelCase(key, '-');
-          if (state == null) {
-            this.removeAttribute(normalizedKey);
-          } else {
-            const stateVal = state[key];
-            const attrsType = attrs[key];
-            if (!prevState || prevState[key] !== stateVal) {
-              if (attrsType === 'bool') {
-                if (stateVal) {
-                  this.setAttribute(normalizedKey, '');
-                } else {
-                  this.removeAttribute(normalizedKey);
-                }
-              } else if (stateVal == null && (attrsType === 'string' || attrsType === 'number')) {
-                this.removeAttribute(normalizedKey);
-              } else {
-                this.setAttribute(normalizedKey, encodeAttrVal(stateVal, attrsType));
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  define(name, _Lib0Component);
-  // @ts-ignore
-  return _Lib0Component
-};
+import * as component from 'lib0/component.js'
+import * as Y from 'yjs' // eslint-disable-line
+import * as shared from './sharedTypes.js'
+import * as dom from 'lib0/dom.js'
 
 /**
  * @typedef {object} Coordinate
@@ -283,38 +10,38 @@ const createComponent = (name, { template, style = '', state: defaultState, onSt
  */
 
 const calculateCoordinateFromEvent = (event, el) => {
-  const canvasRect = /** @type {HTMLElement} */ (querySelector(el.shadowRoot, 'canvas')).getBoundingClientRect();
+  const canvasRect = /** @type {HTMLElement} */ (dom.querySelector(el.shadowRoot, 'canvas')).getBoundingClientRect()
   return { x: (event.clientX - canvasRect.left) / canvasRect.width, y: (event.clientY - canvasRect.top) / canvasRect.height }
-};
+}
 
 const drawStart = (coord, el) => {
   if (coord.target == null || coord.target.nodeName === 'CANVAS') {
-    const drawElement = new YMap();
-    drawElement.set('color', el._internal.currentColor);
-    drawElement.set('type', 'path');
-    drawElement.set('coordinate', calculateCoordinateFromEvent(coord, el));
-    el._internal.currPath = new YArray();
-    drawElement.set('path', el._internal.currPath);
-    drawingContent.push([drawElement]);
+    const drawElement = new Y.Map()
+    drawElement.set('color', el._internal.currentColor)
+    drawElement.set('type', 'path')
+    drawElement.set('coordinate', calculateCoordinateFromEvent(coord, el))
+    el._internal.currPath = new Y.Array()
+    drawElement.set('path', el._internal.currPath)
+    shared.drawingContent.push([drawElement])
   }
   return false
-};
+}
 
 const clearCurrPath = (event, el) => {
-  el._internal.currPath = null;
+  el._internal.currPath = null
   return false
-};
+}
 
 const moveDraw = (coord, el) => {
   if (coord.target == null || coord.target.nodeName === 'CANVAS') {
     if (el._internal.currPath !== null) {
-      el._internal.currPath.push([calculateCoordinateFromEvent(coord, el)]);
+      el._internal.currPath.push([calculateCoordinateFromEvent(coord, el)])
     }
   }
   return false
-};
-
-createComponent('y-demo-drawing', {
+}
+export const name = 'y-demo-drawing';
+component.createComponent('y-demo-drawing', {
   template: `
   <input id="drawing-menubar-checkbox" type="checkbox">
   <div id="drawing-menubar">
@@ -343,7 +70,7 @@ createComponent('y-demo-drawing', {
      */
     touchstart: (event, el) => {
       if (event.touches.length === 1) {
-        drawStart(event.touches[0], el);
+        drawStart(event.touches[0], el)
       }
       return false
     },
@@ -358,123 +85,123 @@ createComponent('y-demo-drawing', {
      */
     touchmove: (event, el) => {
       if (event.touches.length === 1) {
-        moveDraw(event.touches[0], el);
+        moveDraw(event.touches[0], el)
       }
       return false
     }
   },
   onStateChange: (state, prevState, el) => {
-    const shadow = /** @type {any} */ (el.shadowRoot);
-    const drawingCanvas = /** @type {HTMLCanvasElement} */ (querySelector(shadow, 'canvas'));
-    const drawingMenubarCheckbox = /** @type {HTMLInputElement} */ (querySelector(shadow, '#drawing-menubar-checkbox'));
-    const drawingMenubarColors = querySelector(shadow, '#drawing-menu-colors');
-    const drawingMenubarActionColor = /** @type {HTMLElement} */ (querySelector(shadow, '#drawing-menubar-action-color'));
-    const drawingMenubarActionClear = /** @type {HTMLElement} */ (querySelector(shadow, '#drawing-menubar-action-clear'));
+    const shadow = /** @type {any} */ (el.shadowRoot)
+    const drawingCanvas = /** @type {HTMLCanvasElement} */ (dom.querySelector(shadow, 'canvas'))
+    const drawingMenubarCheckbox = /** @type {HTMLInputElement} */ (dom.querySelector(shadow, '#drawing-menubar-checkbox'))
+    const drawingMenubarColors = dom.querySelector(shadow, '#drawing-menu-colors')
+    const drawingMenubarActionColor = /** @type {HTMLElement} */ (dom.querySelector(shadow, '#drawing-menubar-action-color'))
+    const drawingMenubarActionClear = /** @type {HTMLElement} */ (dom.querySelector(shadow, '#drawing-menubar-action-clear'))
 
     // clear all existing state
-    el._internal.currPath = null;
-    el._internal.currentColor = '#333';
+    el._internal.currPath = null
+    el._internal.currentColor = '#333'
     if (el._internal.unregisterYDraw) {
-      el._internal.unregisterYDraw;
+      el._internal.unregisterYDraw
     }
     if (el._internal.unregister) {
-      el._internal.unregister();
+      el._internal.unregister()
     }
     if (state) {
       // draw state
-      const ctx = /** @type {CanvasRenderingContext2D} */ (drawingCanvas.getContext('2d'));
-      const yDrawingContent = drawingContent;
+      const ctx = /** @type {CanvasRenderingContext2D} */ (drawingCanvas.getContext('2d'))
+      const yDrawingContent = shared.drawingContent
 
-      const requestAnimationFrame = window.requestAnimationFrame || setTimeout;
+      const requestAnimationFrame = window.requestAnimationFrame || setTimeout
 
-      let needToRedraw = true;
+      let needToRedraw = true
 
       /**
        * Draw the canvas
        */
       const draw = () => {
         if (needToRedraw) {
-          needToRedraw = false;
-          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-          const width = ctx.canvas.width;
-          const height = ctx.canvas.height;
+          needToRedraw = false
+          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+          const width = ctx.canvas.width
+          const height = ctx.canvas.height
           yDrawingContent.forEach(drawElement => {
             if (drawElement.get('type') === 'path') {
-              const coordinate = /** @type {Coordinate} */ (drawElement.get('coordinate'));
-              const color = /** @type {string} */ (drawElement.get('color'));
-              const path = /** @type {Y.Array<Coordinate>} */ (drawElement.get('path'));
+              const coordinate = /** @type {Coordinate} */ (drawElement.get('coordinate'))
+              const color = /** @type {string} */ (drawElement.get('color'))
+              const path = /** @type {Y.Array<Coordinate>} */ (drawElement.get('path'))
               if (path) {
-                ctx.beginPath();
-                ctx.lineWidth = 5;
-                ctx.lineJoin = ctx.lineCap = 'round';
-                ctx.shadowBlur = 2;
-                ctx.shadowColor = color;
-                ctx.beginPath();
-                ctx.moveTo(coordinate.x * width, coordinate.y * height);
-                ctx.strokeStyle = color;
-                let lastPoint = coordinate;
+                ctx.beginPath()
+                ctx.lineWidth = 5
+                ctx.lineJoin = ctx.lineCap = 'round'
+                ctx.shadowBlur = 2
+                ctx.shadowColor = color
+                ctx.beginPath()
+                ctx.moveTo(coordinate.x * width, coordinate.y * height)
+                ctx.strokeStyle = color
+                let lastPoint = coordinate
                 path.forEach(c => {
                   // @todo this can be optimized by considering the previous coordinates too
                   const pointBetween = {
                     x: (c.x + lastPoint.x) / 2,
                     y: (c.y + lastPoint.y) / 2
-                  };
-                  ctx.quadraticCurveTo(lastPoint.x * width, lastPoint.y * height, pointBetween.x * width, pointBetween.y * height);
-                  lastPoint = c;
-                });
-                ctx.lineTo(lastPoint.x * width, lastPoint.y * height);
-                ctx.stroke();
+                  }
+                  ctx.quadraticCurveTo(lastPoint.x * width, lastPoint.y * height, pointBetween.x * width, pointBetween.y * height)
+                  lastPoint = c
+                })
+                ctx.lineTo(lastPoint.x * width, lastPoint.y * height)
+                ctx.stroke()
               }
             }
-          });
+          })
         }
-      };
+      }
       const requestDrawAnimationFrame = () => {
-        needToRedraw = true;
-        requestAnimationFrame(draw);
-      };
-      yDrawingContent.observeDeep(requestDrawAnimationFrame);
-      el._internal.unregisterYDraw = () => yDrawingContent.unobserveDeep(requestDrawAnimationFrame);
-      requestDrawAnimationFrame();
+        needToRedraw = true
+        requestAnimationFrame(draw)
+      }
+      yDrawingContent.observeDeep(requestDrawAnimationFrame)
+      el._internal.unregisterYDraw = () => yDrawingContent.unobserveDeep(requestDrawAnimationFrame)
+      requestDrawAnimationFrame()
 
       /**
        * @param {string} color
        */
       const createColorChanger = color => () => {
-        drawingMenubarActionColor.style.backgroundColor = color;
-        el._internal.currentColor = color;
-      };
+        drawingMenubarActionColor.style.backgroundColor = color
+        el._internal.currentColor = color
+      }
 
-      const cBlack = createColorChanger('#333');
-      const cOrange = createColorChanger('#ffbc42');
-      const cBlue = createColorChanger('#30bced');
-      const cGreen = createColorChanger('#6eeb83');
+      const cBlack = createColorChanger('#333')
+      const cOrange = createColorChanger('#ffbc42')
+      const cBlue = createColorChanger('#30bced')
+      const cGreen = createColorChanger('#6eeb83')
       const cClear = () => {
-        yDrawingContent.delete(0, yDrawingContent.length);
-        drawingMenubarCheckbox.checked = false;
-      };
+        yDrawingContent.delete(0, yDrawingContent.length)
+        drawingMenubarCheckbox.checked = false
+      }
 
-      const menuBlack = /** @type {HTMLElement} */ (querySelector(shadow, '#drawer-menubar-colors-black'));
-      const menuOrange = /** @type {HTMLElement} */ (querySelector(shadow, '#drawer-menubar-colors-orange'));
-      const menuBlue = /** @type {HTMLElement} */ (querySelector(shadow, '#drawer-menubar-colors-blue'));
-      const menuGreen = /** @type {HTMLElement} */ (querySelector(shadow, '#drawer-menubar-colors-green'));
+      const menuBlack = /** @type {HTMLElement} */ (dom.querySelector(shadow, '#drawer-menubar-colors-black'))
+      const menuOrange = /** @type {HTMLElement} */ (dom.querySelector(shadow, '#drawer-menubar-colors-orange'))
+      const menuBlue = /** @type {HTMLElement} */ (dom.querySelector(shadow, '#drawer-menubar-colors-blue'))
+      const menuGreen = /** @type {HTMLElement} */ (dom.querySelector(shadow, '#drawer-menubar-colors-green'))
 
-      menuBlack.addEventListener('click', cBlack);
-      menuOrange.addEventListener('click', cOrange);
-      menuBlue.addEventListener('click', cBlue);
-      menuGreen.addEventListener('click', cGreen);
-      drawingMenubarActionClear.addEventListener('click', cClear);
+      menuBlack.addEventListener('click', cBlack)
+      menuOrange.addEventListener('click', cOrange)
+      menuBlue.addEventListener('click', cBlue)
+      menuGreen.addEventListener('click', cGreen)
+      drawingMenubarActionClear.addEventListener('click', cClear)
 
       if (el._internal.unregister) {
-        el._internal.unregister();
+        el._internal.unregister()
       }
       el._internal.unregister = () => {
-        menuBlack.removeEventListener('click', cBlack);
-        menuOrange.removeEventListener('click', cOrange);
-        menuBlue.removeEventListener('click', cBlue);
-        menuGreen.removeEventListener('click', cGreen);
-        drawingMenubarActionClear.removeEventListener('click', cClear);
-      };
+        menuBlack.removeEventListener('click', cBlack)
+        menuOrange.removeEventListener('click', cOrange)
+        menuBlue.removeEventListener('click', cBlue)
+        menuGreen.removeEventListener('click', cGreen)
+        drawingMenubarActionClear.removeEventListener('click', cClear)
+      }
     }
   },
   style: `
@@ -608,5 +335,7 @@ createComponent('y-demo-drawing', {
     background-color: var(--theme-green);
   }  
   `
-});
-//# sourceMappingURL=drawing.js.map
+})
+
+console.log('drawing ok')
+console.log(component)
