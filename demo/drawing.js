@@ -69,37 +69,51 @@ component.createComponent('y-demo-drawing', {
   <canvas width="2000" height="2000"></canvas>
   `,
   listeners: {
-    mousedown: drawStart,
-    /**
-     * @param {any} event
-     */
-    touchstart: (event, el) => {
-      event.preventDefault()
-      if (event.touches.length === 1) {
-        drawStart(event.touches[0], el)
-      }
-      return false
+    connected: (event, el) => {
+      const shadow = /** @type {any} */ (el.shadowRoot)
+
+      const drawingCanvas = /** @type {HTMLCanvasElement} */ (dom.querySelector(shadow, 'canvas'))      
+
+      const resizeCanvas = (canvas) => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      };
+
+      // Resize the canvas on initialization
+      resizeCanvas(drawingCanvas);
+
+      // Add event listener to resize the canvas on window resize
+      window.addEventListener('resize', () => resizeCanvas(drawingCanvas));
+
+      drawingCanvas.addEventListener('touchstart', event => {        
+        event.preventDefault();
+        if (event.touches.length === 1) {
+          drawStart(event.touches[0], el)
+        }
+        return false;        
+      })
+      drawingCanvas.addEventListener('touchcancel', event => {        
+        clearCurrPath(event, el)
+      })
+      drawingCanvas.addEventListener('touchend', event => {        
+        event.preventDefault();
+        clearCurrPath(event, el);
+      })
+      drawingCanvas.addEventListener('touchmove', event => {        
+        event.preventDefault();
+        if (event.touches.length === 1) {
+          const touch = event.touches[0];
+          moveDraw(touch, el);
+        }
+        return false;
+      })
+
     },
+    mousedown: drawStart,
     mouseleave: clearCurrPath,
     mouseup: clearCurrPath,
-    touchcancel: clearCurrPath,
-    touchend: (event, el) => {
-      event.preventDefault(); // Prevent default behavior
-      clearCurrPath(event, el);
-    },
     mousemove: moveDraw,
-    /**
-     * @param {any} event
-     * @param {any} el
-     */
-    touchmove: (event, el) => {
-      event.preventDefault()
-      if (event.touches.length === 1) {
-        moveDraw(event.touches[0], el)
-      }
-      return false
-    }
-  },
+  },  
   onStateChange: (state, prevState, el) => {
     const shadow = /** @type {any} */ (el.shadowRoot)
     const drawingCanvas = /** @type {HTMLCanvasElement} */ (dom.querySelector(shadow, 'canvas'))
@@ -223,6 +237,7 @@ component.createComponent('y-demo-drawing', {
 
   canvas {
     width: 100%;
+    height: 100%;
     background-image: -webkit-repeating-radial-gradient(center center, rgba(0,0,0,.2), rgba(0,0,0,.2) 1px, transparent 1px, transparent 100%);
     background-size: 1rem 1rem;
   }
