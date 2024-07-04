@@ -76,7 +76,8 @@
     "yjs": "^13.6.8"
   },
   "peerDependencies": {
-    "yjs": "^13.6.8"
+    "yjs": "^13.6.8",
+    "trystero": "^0.18.0"
   },
   "optionalDependencies": {
     "ws": "^8.14.2"
