@@ -40,7 +40,7 @@ const moveDraw = (coord, el) => {
   }
   return false
 }
-export const name = 'y-demo-drawing';
+export const name = 'y-demo-drawing'
 component.createComponent('y-demo-drawing', {
   template: `
   <input id="drawing-menubar-checkbox" type="checkbox">
@@ -94,7 +94,7 @@ component.createComponent('y-demo-drawing', {
     const shadow = /** @type {any} */ (el.shadowRoot)
     const drawingCanvas = /** @type {HTMLCanvasElement} */ (dom.querySelector(shadow, 'canvas'))
     const drawingMenubarCheckbox = /** @type {HTMLInputElement} */ (dom.querySelector(shadow, '#drawing-menubar-checkbox'))
-    const drawingMenubarColors = dom.querySelector(shadow, '#drawing-menu-colors')
+    // const drawingMenubarColors = dom.querySelector(shadow, '#drawing-menu-colors')
     const drawingMenubarActionColor = /** @type {HTMLElement} */ (dom.querySelector(shadow, '#drawing-menubar-action-color'))
     const drawingMenubarActionClear = /** @type {HTMLElement} */ (dom.querySelector(shadow, '#drawing-menubar-action-clear'))
 
@@ -102,7 +102,7 @@ component.createComponent('y-demo-drawing', {
     el._internal.currPath = null
     el._internal.currentColor = '#333'
     if (el._internal.unregisterYDraw) {
-      el._internal.unregisterYDraw
+      el._internal.unregisterYDraw()
     }
     if (el._internal.unregister) {
       el._internal.unregister()
