@@ -91,11 +91,11 @@ export default [
     }],
     plugins
   }, {
-    input: './src/y-webrtc.js',
-    external: id => /^(lib0|yjs|y-protocols|simple-peer)/.test(id),
+    input: './src/y-trystero.js',
+    external: id => /^(lib0|yjs|y-protocols|trystero)/.test(id),
     output: [{
-      name: 'y-webrtc',
-      file: 'dist/y-webrtc.cjs',
+      name: 'y-trystero',
+      file: 'dist/y-trystero.cjs',
       format: 'cjs',
       sourcemap: true
     }]

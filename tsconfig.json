@@ -15,6 +15,6 @@
     "paths": {
     }
   },
-  "include": ["./src/y-webrtc.js"],
-  "exclude": ["./node_modules/simple-peer/*"]
+  "include": ["./src/y-trystero.js"],
+  "exclude": ["./node_modules/trystero/*"]
 }

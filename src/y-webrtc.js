@@ -1,4 +1,3 @@
-import * as ws from 'lib0/websocket'
 import * as map from 'lib0/map'
 import * as error from 'lib0/error'
 import * as random from 'lib0/random'
@@ -8,41 +7,49 @@ import { ObservableV2 } from 'lib0/observable'
 import * as logging from 'lib0/logging'
 import * as promise from 'lib0/promise'
 import * as bc from 'lib0/broadcastchannel'
-import * as buffer from 'lib0/buffer'
 import * as math from 'lib0/math'
 import { createMutex } from 'lib0/mutex'
 
-import * as Y from 'yjs' // eslint-disable-line
-import Peer from 'simple-peer/simplepeer.min.js'
+import { selfId } from 'trystero'
+
+/**
+ * @typedef {import('trystero').Room} TrysteroRoom
+ */
 
 import * as syncProtocol from 'y-protocols/sync'
 import * as awarenessProtocol from 'y-protocols/awareness'
-
 import * as cryptoutils from './crypto.js'
 
-const log = logging.createModuleLogger('y-webrtc')
+/**
+ * @typedef {import('yjs').Doc} YDoc
+ */
+
+/**
+ * @typedef {import('y-protocols/awareness').Awareness} Awareness
+ */
+
+const log = logging.createModuleLogger('y-trystero')
 
 const messageSync = 0
 const messageQueryAwareness = 3
 const messageAwareness = 1
 const messageBcPeerId = 4
 
-/**
- * @type {Map<string, SignalingConn>}
- */
-const signalingConns = new Map()
+export { selfId }
 
 /**
- * @type {Map<string,Room>}
+ * @type {Map<string,TrysteroDocRoom>}
  */
-const rooms = new Map()
+export const rooms = new Map()
+
+export const getRoom = (roomId) => rooms.get(roomId)
 
 /**
- * @param {Room} room
+ * @param {TrysteroDocRoom} room
  */
-const checkIsSynced = room => {
+const checkIsSynced = (room) => {
   let synced = true
-  room.webrtcConns.forEach(peer => {
+  room.trysteroConns.forEach((peer) => {
     if (!peer.synced) {
       synced = false
     }
@@ -55,7 +62,7 @@ const checkIsSynced = room => {
 }
 
 /**
- * @param {Room} room
+ * @param {TrysteroDocRoom} room
  * @param {Uint8Array} buf
  * @param {function} syncedCallback
  * @return {encoding.Encoder?}
@@ -106,7 +113,7 @@ const readMessage = (room, buf, syncedCallback) => {
         room.provider.emit('peers', [{
           added,
           removed,
-          webrtcPeers: Array.from(room.webrtcConns.keys()),
+          trysteroPeers: Array.from(room.trysteroConns.keys()),
           bcPeers: Array.from(room.bcConns)
         }])
         broadcastBcPeerId(room)
@@ -125,7 +132,7 @@ const readMessage = (room, buf, syncedCallback) => {
 }
 
 /**
- * @param {WebrtcConn} peerConn
+ * @param {TrysteroConn} peerConn
  * @param {Uint8Array} buf
  * @return {encoding.Encoder?}
  */
@@ -140,148 +147,121 @@ const readPeerMessage = (peerConn, buf) => {
 }
 
 /**
- * @param {WebrtcConn} webrtcConn
+ * @param {TrysteroConn} trysteroConn
  * @param {encoding.Encoder} encoder
  */
-const sendWebrtcConn = (webrtcConn, encoder) => {
-  log('send message to ', logging.BOLD, webrtcConn.remotePeerId, logging.UNBOLD, logging.GREY, ' (', webrtcConn.room.name, ')', logging.UNCOLOR)
+const sendTrysteroConn = (trysteroConn, encoder) => {
+  log('send message to ', logging.BOLD, trysteroConn.remotePeerId, logging.UNBOLD, logging.GREY, ' (', trysteroConn.room.name, ')', logging.UNCOLOR)
   try {
-    webrtcConn.peer.send(encoding.toUint8Array(encoder))
-  } catch (e) {}
+    trysteroConn.room.provider.sendDocData(encoding.toUint8Array(encoder), trysteroConn.remotePeerId)
+  } catch (e) {
+    console.log('error sending', e)
+  }
 }
 
 /**
- * @param {Room} room
+ * @param {TrysteroDocRoom} room
  * @param {Uint8Array} m
  */
-const broadcastWebrtcConn = (room, m) => {
+const broadcastTrysteroConn = (room, m) => {
   log('broadcast message in ', logging.BOLD, room.name, logging.UNBOLD)
-  room.webrtcConns.forEach(conn => {
+  room.trysteroConns.forEach((conn) => {
     try {
-      conn.peer.send(m)
-    } catch (e) {}
+      conn.room.provider.sendDocData(m)
+    } catch (e) {
+      console.log('error broadcasting', e)
+    }
   })
 }
 
-export class WebrtcConn {
+export class TrysteroConn {
   /**
-   * @param {SignalingConn} signalingConn
-   * @param {boolean} initiator
    * @param {string} remotePeerId
-   * @param {Room} room
+   * @param {TrysteroDocRoom} room
    */
-  constructor (signalingConn, initiator, remotePeerId, room) {
-    log('establishing connection to ', logging.BOLD, remotePeerId)
+  constructor (remotePeerId, room) {
+    log('connected to ', logging.BOLD, remotePeerId)
     this.room = room
     this.remotePeerId = remotePeerId
-    this.glareToken = undefined
     this.closed = false
     this.connected = false
     this.synced = false
-    /**
-     * @type {import('simple-peer').Instance}
-     */
-    this.peer = new Peer({ initiator, ...room.provider.peerOpts })
-    this.peer.on('signal', signal => {
-      if (this.glareToken === undefined) {
-        // add some randomness to the timestamp of the offer
-        this.glareToken = Date.now() + Math.random()
-      }
-      publishSignalingMessage(signalingConn, room, { to: remotePeerId, from: room.peerId, type: 'signal', token: this.glareToken, signal })
-    })
-    this.peer.on('connect', () => {
-      log('connected to ', logging.BOLD, remotePeerId)
-      this.connected = true
-      // send sync step 1
-      const provider = room.provider
-      const doc = provider.doc
-      const awareness = room.awareness
+
+    // already connected
+    this.connected = true
+    // send sync step 1
+    const provider = room.provider
+    const doc = provider.doc
+    const awareness = room.awareness
+    const encoder = encoding.createEncoder()
+    encoding.writeVarUint(encoder, messageSync)
+    syncProtocol.writeSyncStep1(encoder, doc)
+    sendTrysteroConn(this, encoder)
+    const awarenessStates = awareness.getStates()
+    if (awarenessStates.size > 0) {
       const encoder = encoding.createEncoder()
-      encoding.writeVarUint(encoder, messageSync)
-      syncProtocol.writeSyncStep1(encoder, doc)
-      sendWebrtcConn(this, encoder)
-      const awarenessStates = awareness.getStates()
-      if (awarenessStates.size > 0) {
-        const encoder = encoding.createEncoder()
-        encoding.writeVarUint(encoder, messageAwareness)
-        encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, Array.from(awarenessStates.keys())))
-        sendWebrtcConn(this, encoder)
-      }
-    })
-    this.peer.on('close', () => {
-      this.connected = false
-      this.closed = true
-      if (room.webrtcConns.has(this.remotePeerId)) {
-        room.webrtcConns.delete(this.remotePeerId)
-        room.provider.emit('peers', [{
-          removed: [this.remotePeerId],
-          added: [],
-          webrtcPeers: Array.from(room.webrtcConns.keys()),
-          bcPeers: Array.from(room.bcConns)
-        }])
-      }
-      checkIsSynced(room)
-      this.peer.destroy()
-      log('closed connection to ', logging.BOLD, remotePeerId)
-      announceSignalingInfo(room)
-    })
-    this.peer.on('error', err => {
-      log('Error in connection to ', logging.BOLD, remotePeerId, ': ', err)
-      announceSignalingInfo(room)
-    })
-    this.peer.on('data', data => {
-      const answer = readPeerMessage(this, data)
-      if (answer !== null) {
-        sendWebrtcConn(this, answer)
+      encoding.writeVarUint(encoder, messageAwareness)
+      encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, Array.from(awarenessStates.keys())))
+      sendTrysteroConn(this, encoder)
+    }
+    room.provider.listenDocData((data, peerId) => {
+      const arr = /** @type {Uint8Array} */ (data)
+      try {
+        const answer = readPeerMessage(this, arr)
+        if (answer !== null) {
+          sendTrysteroConn(this, answer)
+        }
+      } catch (err) {
+        console.log(err)
       }
     })
   }
 
+  onClose () {
+    this.connected = false
+    this.closed = true
+    const { room, remotePeerId } = this
+    if (room.trysteroConns.has(remotePeerId)) {
+      room.trysteroConns.delete(remotePeerId)
+      room.provider.emit('peers', [
+        {
+          removed: [remotePeerId],
+          added: [],
+          trysteroPeers: Array.from(room.trysteroConns.keys()),
+          bcPeers: Array.from(room.bcConns)
+        }
+      ])
+    }
+    checkIsSynced(room)
+    log('closed connection to ', logging.BOLD, remotePeerId)
+  }
+
   destroy () {
-    this.peer.destroy()
+    // console.log("todo: destroy conn(?)");
   }
 }
 
 /**
- * @param {Room} room
+ * @param {TrysteroDocRoom} room
  * @param {Uint8Array} m
  */
-const broadcastBcMessage = (room, m) => cryptoutils.encrypt(m, room.key).then(data =>
-  room.mux(() =>
-    bc.publish(room.name, data)
-  )
-)
+const broadcastBcMessage = (room, m) => cryptoutils.encrypt(m, room.key).then((data) => room.mux(() => bc.publish(room.name, data)))
 
 /**
- * @param {Room} room
+ * @param {TrysteroDocRoom} room
  * @param {Uint8Array} m
  */
 const broadcastRoomMessage = (room, m) => {
   if (room.bcconnected) {
     broadcastBcMessage(room, m)
   }
-  broadcastWebrtcConn(room, m)
+  broadcastTrysteroConn(room, m)
 }
 
 /**
- * @param {Room} room
+ * @param {TrysteroDocRoom} room
  */
-const announceSignalingInfo = room => {
-  signalingConns.forEach(conn => {
-    // only subscribe if connection is established, otherwise the conn automatically subscribes to all rooms
-    if (conn.connected) {
-      conn.send({ type: 'subscribe', topics: [room.name] })
-      if (room.webrtcConns.size < room.provider.maxConns) {
-        publishSignalingMessage(conn, room, { type: 'announce', from: room.peerId })
-      }
-    }
-  })
-}
-
-/**
- * @param {Room} room
- */
-const broadcastBcPeerId = room => {
+const broadcastBcPeerId = (room) => {
   if (room.provider.filterBcConns) {
     // broadcast peerId via broadcastchannel
     const encoderPeerIdBc = encoding.createEncoder()
@@ -292,20 +272,15 @@ const broadcastBcPeerId = room => {
   }
 }
 
-export class Room {
+export class TrysteroDocRoom {
   /**
-   * @param {Y.Doc} doc
-   * @param {WebrtcProvider} provider
+   * @param {YDoc} doc
+   * @param {TrysteroProvider} provider
    * @param {string} name
    * @param {CryptoKey|null} key
    */
   constructor (doc, provider, name, key) {
-    /**
-     * Do not assume that peerId is unique. This is only meant for sending signaling messages.
-     *
-     * @type {string}
-     */
-    this.peerId = random.uuidv4()
+    this.peerId = selfId
     this.doc = doc
     /**
      * @type {awarenessProtocol.Awareness}
@@ -317,9 +292,9 @@ export class Room {
     // @todo make key secret by scoping
     this.key = key
     /**
-     * @type {Map<string, WebrtcConn>}
+     * @type {Map<string, TrysteroConn>}
      */
-    this.webrtcConns = new Map()
+    this.trysteroConns = new Map()
     /**
      * @type {Set<string>}
      */
@@ -376,13 +351,35 @@ export class Room {
     } else if (typeof process !== 'undefined') {
       process.on('exit', this._beforeUnloadHandler)
     }
+
+    provider.trystero.onPeerJoin((peerId) => {
+      log(`${peerId} joined`)
+      if (this.trysteroConns.size < provider.maxConns) {
+        map.setIfUndefined(this.trysteroConns, peerId, () => new TrysteroConn(peerId, provider.room))
+      }
+    })
+    provider.trystero.onPeerLeave((peerId) => {
+      const conn = this.trysteroConns.get(peerId)
+      conn.onClose()
+      if (this.trysteroConns.has(peerId)) {
+        this.trysteroConns.delete(peerId)
+        this.provider.emit('peers', [
+          {
+            removed: [peerId],
+            added: [],
+            trysteroPeers: Array.from(provider.room.trysteroConns.keys()),
+            bcPeers: Array.from(this.bcConns)
+          }
+        ])
+      }
+      checkIsSynced(this)
+      log('closed connection to ', logging.BOLD, peerId)
+    })
   }
 
-  connect () {
+  connectToDoc () {
     this.doc.on('update', this._docUpdateHandler)
     this.awareness.on('update', this._awarenessUpdateHandler)
-    // signal through all available signaling connections
-    announceSignalingInfo(this)
     const roomName = this.name
     bc.subscribe(roomName, this._bcSubscriber)
     this.bcconnected = true
@@ -410,12 +407,6 @@ export class Room {
   }
 
   disconnect () {
-    // signal through all available signaling connections
-    signalingConns.forEach(conn => {
-      if (conn.connected) {
-        conn.send({ type: 'unsubscribe', topics: [this.name] })
-      }
-    })
     awarenessProtocol.removeAwarenessStates(this.awareness, [this.doc.clientID], 'disconnect')
     // broadcast peerId removal via broadcastchannel
     const encoderPeerIdBc = encoding.createEncoder()
@@ -428,7 +419,7 @@ export class Room {
     this.bcconnected = false
     this.doc.off('update', this._docUpdateHandler)
     this.awareness.off('update', this._awarenessUpdateHandler)
-    this.webrtcConns.forEach(conn => conn.destroy())
+    this.trysteroConns.forEach(conn => conn.destroy())
   }
 
   destroy () {
@@ -442,121 +433,21 @@ export class Room {
 }
 
 /**
- * @param {Y.Doc} doc
- * @param {WebrtcProvider} provider
+ * @param {YDoc} doc
+ * @param {TrysteroProvider} provider
  * @param {string} name
  * @param {CryptoKey|null} key
- * @return {Room}
+ * @return {TrysteroDocRoom}
  */
 const openRoom = (doc, provider, name, key) => {
   // there must only be one room
   if (rooms.has(name)) {
     throw error.create(`A Yjs Doc connected to room "${name}" already exists!`)
   }
-  const room = new Room(doc, provider, name, key)
-  rooms.set(name, /** @type {Room} */ (room))
+  const room = new TrysteroDocRoom(doc, provider, name, key)
+  room.connectToDoc()
+  rooms.set(name, /** @type {TrysteroDocRoom} */ (room))
   return room
-}
-
-/**
- * @param {SignalingConn} conn
- * @param {Room} room
- * @param {any} data
- */
-const publishSignalingMessage = (conn, room, data) => {
-  if (room.key) {
-    cryptoutils.encryptJson(data, room.key).then(data => {
-      conn.send({ type: 'publish', topic: room.name, data: buffer.toBase64(data) })
-    })
-  } else {
-    conn.send({ type: 'publish', topic: room.name, data })
-  }
-}
-
-export class SignalingConn extends ws.WebsocketClient {
-  constructor (url) {
-    super(url)
-    /**
-     * @type {Set<WebrtcProvider>}
-     */
-    this.providers = new Set()
-    this.on('connect', () => {
-      log(`connected (${url})`)
-      const topics = Array.from(rooms.keys())
-      this.send({ type: 'subscribe', topics })
-      rooms.forEach(room =>
-        publishSignalingMessage(this, room, { type: 'announce', from: room.peerId })
-      )
-    })
-    this.on('message', m => {
-      switch (m.type) {
-        case 'publish': {
-          const roomName = m.topic
-          const room = rooms.get(roomName)
-          if (room == null || typeof roomName !== 'string') {
-            return
-          }
-          const execMessage = data => {
-            const webrtcConns = room.webrtcConns
-            const peerId = room.peerId
-            if (data == null || data.from === peerId || (data.to !== undefined && data.to !== peerId) || room.bcConns.has(data.from)) {
-              // ignore messages that are not addressed to this conn, or from clients that are connected via broadcastchannel
-              return
-            }
-            const emitPeerChange = webrtcConns.has(data.from)
-              ? () => {}
-              : () =>
-                room.provider.emit('peers', [{
-                  removed: [],
-                  added: [data.from],
-                  webrtcPeers: Array.from(room.webrtcConns.keys()),
-                  bcPeers: Array.from(room.bcConns)
-                }])
-            switch (data.type) {
-              case 'announce':
-                if (webrtcConns.size < room.provider.maxConns) {
-                  map.setIfUndefined(webrtcConns, data.from, () => new WebrtcConn(this, true, data.from, room))
-                  emitPeerChange()
-                }
-                break
-              case 'signal':
-                if (data.signal.type === 'offer') {
-                  const existingConn = webrtcConns.get(data.from)
-                  if (existingConn) {
-                    const remoteToken = data.token
-                    const localToken = existingConn.glareToken
-                    if (localToken && localToken > remoteToken) {
-                      log('offer rejected: ', data.from)
-                      return
-                    }
-                    // if we don't reject the offer, we will be accepting it and answering it
-                    existingConn.glareToken = undefined
-                  }
-                }
-                if (data.signal.type === 'answer') {
-                  log('offer answered by: ', data.from)
-                  const existingConn = webrtcConns.get(data.from)
-                  existingConn.glareToken = undefined
-                }
-                if (data.to === peerId) {
-                  map.setIfUndefined(webrtcConns, data.from, () => new WebrtcConn(this, false, data.from, room)).peer.signal(data.signal)
-                  emitPeerChange()
-                }
-                break
-            }
-          }
-          if (room.key) {
-            if (typeof m.data === 'string') {
-              cryptoutils.decryptJson(buffer.fromBase64(m.data), room.key).then(execMessage)
-            }
-          } else {
-            execMessage(m.data)
-          }
-        }
-      }
-    })
-    this.on('disconnect', () => log(`disconnect (${url})`))
-  }
 }
 
 /**
@@ -566,131 +457,76 @@ export class SignalingConn extends ws.WebsocketClient {
  * @property {awarenessProtocol.Awareness} [awareness]
  * @property {number} [maxConns]
  * @property {boolean} [filterBcConns]
- * @property {import('simple-peer').SimplePeer['config']} [peerOpts]
+ * @property {any} [peerOpts]
  */
 
 /**
- * @param {WebrtcProvider} provider
- */
-const emitStatus = provider => {
-  provider.emit('status', [{
-    connected: provider.connected
-  }])
-}
-
-/**
- * @typedef {Object} WebrtcProviderEvents
- * @property {function({connected:boolean}):void} WebrtcProviderEvent.status
- * @property {function({synced:boolean}):void} WebrtcProviderEvent.synced
- * @property {function({added:Array<string>,removed:Array<string>,webrtcPeers:Array<string>,bcPeers:Array<string>}):void} WebrtcProviderEvent.peers
+ * @typedef {Object} TrysteroProviderEvents
+ * @property {function({connected:boolean}):void} TrysteroProviderEvent.status
+ * @property {function({synced:boolean}):void} TrysteroProviderEvent.synced
+ * @property {function({added:Array<string>,removed:Array<string>,trysteroPeers:Array<string>,bcPeers:Array<string>}):void} TrysteroProviderEvent.peers
  */
 
-/**
- * @extends ObservableV2<WebrtcProviderEvents>
- */
-export class WebrtcProvider extends ObservableV2 {
+export class TrysteroProvider extends ObservableV2 {
   /**
-   * @param {string} roomName
-   * @param {Y.Doc} doc
-   * @param {ProviderOptions?} opts
+   * @class
+   * @classdesc Represents a Y.Trystero instance.
+   * @param {YDoc} doc - The Y.Doc instance.
+   * @param {string} roomName - The name of the room.
+   * @param {TrysteroRoom} trysteroRoom - The TrysteroRoom instance.
+   * @param {Object} options - The options for the constructor.
+   * @param {string} [options.password] - The password for encryption.
+   * @param {Awareness} [options.awareness=new awarenessProtocol.Awareness(doc)] - The awareness instance.
+   * @param {number} [options.maxConns=20 + Math.floor(Math.random() * 15)] - The maximum number of connections.
+   * @param {boolean} [options.filterBcConns=true] - Whether to filter broadcast connections.
    */
   constructor (
     roomName,
     doc,
+    trysteroRoom,
     {
-      signaling = ['wss://y-webrtc-eu.fly.dev'],
-      password = null,
+      password,
       awareness = new awarenessProtocol.Awareness(doc),
       maxConns = 20 + math.floor(random.rand() * 15), // the random factor reduces the chance that n clients form a cluster
-      filterBcConns = true,
-      peerOpts = {} // simple-peer options. See https://github.com/feross/simple-peer#peer--new-peeropts
+      filterBcConns = true
     } = {}
   ) {
     super()
-    this.roomName = roomName
     this.doc = doc
-    this.filterBcConns = filterBcConns
-    /**
-     * @type {awarenessProtocol.Awareness}
-     */
-    this.awareness = awareness
-    this.shouldConnect = false
-    this.signalingUrls = signaling
-    this.signalingConns = []
     this.maxConns = maxConns
-    this.peerOpts = peerOpts
+    this.filterBcConns = filterBcConns
     /**
      * @type {PromiseLike<CryptoKey | null>}
      */
     this.key = password ? cryptoutils.deriveKey(password, roomName) : /** @type {PromiseLike<null>} */ (promise.resolve(null))
+    this.trystero = trysteroRoom
     /**
-     * @type {Room|null}
+     * @type {TrysteroDocRoom|null}
      */
     this.room = null
-    this.key.then(key => {
+    this.roomName = roomName
+    /**
+     * @type {awarenessProtocol.Awareness}
+     */
+    this.awareness = awareness
+    this.key.then((key) => {
       this.room = openRoom(doc, this, roomName, key)
-      if (this.shouldConnect) {
-        this.room.connect()
-      } else {
-        this.room.disconnect()
-      }
-      emitStatus(this)
     })
-    this.connect()
-    this.destroy = this.destroy.bind(this)
-    doc.on('destroy', this.destroy)
-  }
-
-  /**
-   * Indicates whether the provider is looking for other peers.
-   *
-   * Other peers can be found via signaling servers or via broadcastchannel (cross browser-tab
-   * communication). You never know when you are connected to all peers. You also don't know if
-   * there are other peers. connected doesn't mean that you are connected to any physical peers
-   * working on the same resource as you. It does not change unless you call provider.disconnect()
-   *
-   * `this.on('status', (event) => { console.log(event.connected) })`
-   *
-   * @type {boolean}
-   */
-  get connected () {
-    return this.room !== null && this.shouldConnect
-  }
-
-  connect () {
-    this.shouldConnect = true
-    this.signalingUrls.forEach(url => {
-      const signalingConn = map.setIfUndefined(signalingConns, url, () => new SignalingConn(url))
-      this.signalingConns.push(signalingConn)
-      signalingConn.providers.add(this)
-    })
-    if (this.room) {
-      this.room.connect()
-      emitStatus(this)
-    }
-  }
-
-  disconnect () {
-    this.shouldConnect = false
-    this.signalingConns.forEach(conn => {
-      conn.providers.delete(this)
-      if (conn.providers.size === 0) {
-        conn.destroy()
-        signalingConns.delete(conn.url)
-      }
-    })
-    if (this.room) {
-      this.room.disconnect()
-      emitStatus(this)
-    }
+    doc.on('destroy', () => this.destroy)
+    const [sendDocData, listenDocData] = trysteroRoom.makeAction('docdata')
+    this.sendDocData = sendDocData
+    this.listenDocData = listenDocData
   }
 
   destroy () {
     this.doc.off('destroy', this.destroy)
     // need to wait for key before deleting room
     this.key.then(() => {
-      /** @type {Room} */ (this.room).destroy()
-      rooms.delete(this.roomName)
+      if (this.room) {
+        rooms.delete(this.room.name)
+        this.room.destroy()
+        this.room = undefined
+      }
     })
     super.destroy()
   }
