@@ -31,6 +31,9 @@ const customLibModules = new Set([
 // @ts-ignore We use this for debugging
 const debugResolve = {
   resolveId (importee) {
+    if (importee === 'd-components') {
+      return `${process.cwd()}/../d-components/src/index.js`
+    }    
     if (localImports) {
       if (importee === 'yjs') {
         return `${process.cwd()}/../yjs/src/index.js`
@@ -75,10 +78,11 @@ export default [
   {
     input: './demo/index.js',
     output: [{
-      name: 'demo',
-      file: 'dist/demo.js',
-      format: 'iife',
-      sourcemap: true
+      dir: 'dist/demo',
+      format: 'esm',
+      sourcemap: true,
+      entryFileNames: '[name].js',
+      chunkFileNames: '[name].js'
     }],
     plugins
   }, {

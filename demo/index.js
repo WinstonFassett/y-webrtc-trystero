@@ -1,14 +1,10 @@
 /* eslint-env browser */
 
-import * as Y from 'yjs'
-import { TrysteroProvider } from '../src/y-trystero.js'
-import { joinRoom } from 'trystero'
+import { doc, trysteroProvider as provider, trysteroProvider } from './sharedTypes.js'
+import * as drawing from './drawing.js'
+import { drawingDemo } from './elements.js'
 
-const ydoc = new Y.Doc()
-const appId = 'y-trystero-demo'
-const roomId = 'y-trystero-demo-room'
-const provider = new TrysteroProvider(roomId, ydoc, joinRoom({ appId }, roomId))
-const yarray = ydoc.getArray()
+const yarray = doc.getArray()
 
 provider.on('synced', synced => {
   // NOTE: This is only called when a different browser connects to this client
@@ -23,4 +19,4 @@ yarray.observeDeep(() => {
 })
 
 // @ts-ignore
-window.example = { provider, ydoc, yarray }
+window.example = { provider, doc, yarray, drawing, drawingDemo }
