@@ -1,6 +1,9 @@
 import nodeResolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import { terser } from 'rollup-plugin-terser'
+import copy from 'rollup-plugin-copy'
+import serve from 'rollup-plugin-serve'
+import livereload from 'rollup-plugin-livereload'
 
 // If truthy, it expects all y-* dependencies in the upper directory.
 // This is only necessary if you want to test and make changes to several repositories.
@@ -33,7 +36,7 @@ const debugResolve = {
   resolveId (importee) {
     if (importee === 'd-components') {
       return `${process.cwd()}/../d-components/src/index.js`
-    }    
+    }
     if (localImports) {
       if (importee === 'yjs') {
         return `${process.cwd()}/../yjs/src/index.js`
@@ -65,13 +68,32 @@ const minificationPlugins = process.env.PRODUCTION
   })]
   : []
 
+const devPlugins = process.env.SERVE
+  ? [
+    serve({
+      open: true,
+      contentBase: 'dist/demo',
+      port: 8080
+    }),
+    livereload({
+      watch: 'dist/demo'
+    })
+  ]
+  : []
 const plugins = [
   debugResolve,
   nodeResolve({
     mainFields: ['module', 'browser', 'main']
   }),
   commonjs(),
-  ...minificationPlugins
+  ...minificationPlugins,
+  ...devPlugins,
+  copy({
+    targets: [
+      { src: 'demo/index.html', dest: 'dist/demo' },
+      { src: 'demo/main.css', dest: 'dist/demo' }
+    ]
+  })
 ]
 
 export default [

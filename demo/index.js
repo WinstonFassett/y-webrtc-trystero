@@ -1,6 +1,6 @@
 /* eslint-env browser */
 
-import { doc, trysteroProvider as provider, trysteroProvider } from './sharedTypes.js'
+import { doc, trysteroProvider as provider } from './sharedTypes.js'
 import * as drawing from './drawing.js'
 import { drawingDemo } from './elements.js'
 

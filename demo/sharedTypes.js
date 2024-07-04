@@ -4,9 +4,7 @@ import { TrysteroProvider } from '../src/y-trystero.js'
 import { joinRoom } from 'trystero'
 // import { IndexeddbPersistence, storeState } from 'y-indexeddb'
 
-const websocketUrl = 'wss://demos.yjs.dev'
-
-let lastSnapshot = null
+const lastSnapshot = null
 
 /**
  * @param {Y.Item} item
@@ -56,6 +54,7 @@ class LocalRemoteUserData extends Y.PermanentUserData {
   getUserByClientId (clientid) {
     return super.getUserByClientId(clientid) || 'remote'
   }
+
   /**
    * @param {Y.ID} id
    * @return {string}
