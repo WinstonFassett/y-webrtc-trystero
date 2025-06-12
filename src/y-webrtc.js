@@ -62,6 +62,40 @@ const checkIsSynced = (room) => {
 }
 
 /**
+ * @param {decoding.Decoder} decoder
+ * @param {encoding.Encoder} encoder
+ * @param {YDoc} doc
+ * @param {any} transactionOrigin
+ * @param {'view' | 'edit'} accessLevel
+ * @return {number}
+ */
+const readSyncMessage = (decoder, encoder, doc, transactionOrigin, accessLevel) => {
+  const messageType = decoding.readVarUint(decoder)
+  switch (messageType) {
+    case syncProtocol.messageYjsSyncStep1:
+      syncProtocol.readSyncStep1(decoder, encoder, doc)
+      break
+    case syncProtocol.messageYjsSyncStep2:
+      if (accessLevel !== 'edit') {
+        console.warn('edit disabled', doc.guid)
+        return messageType
+      }
+      syncProtocol.readSyncStep2(decoder, doc, transactionOrigin)
+      break
+    case syncProtocol.messageYjsUpdate:
+      if (accessLevel !== 'edit') {
+        console.warn('edit disabled', doc.guid, accessLevel)
+        return messageType
+      }
+      syncProtocol.readUpdate(decoder, doc, transactionOrigin)
+      break
+    default:
+      throw new Error('Unknown message type')
+  }
+  return messageType
+}
+
+/**
  * @param {TrysteroDocRoom} room
  * @param {Uint8Array} buf
  * @param {function} syncedCallback
@@ -80,7 +114,13 @@ const readMessage = (room, buf, syncedCallback) => {
   switch (messageType) {
     case messageSync: {
       encoding.writeVarUint(encoder, messageSync)
-      const syncMessageType = syncProtocol.readSyncMessage(decoder, encoder, doc, room)
+      const syncMessageType = readSyncMessage(
+        decoder,
+        encoder,
+        doc,
+        room,
+        room.provider.accessLevel || 'edit' // Default to 'edit' for backward compatibility
+      )
       if (syncMessageType === syncProtocol.messageYjsSyncStep2 && !room.synced) {
         syncedCallback()
       }
@@ -452,11 +492,12 @@ const openRoom = (doc, provider, name, key) => {
 
 /**
  * @typedef {Object} ProviderOptions
- * @property {Array<string>} [signaling]
- * @property {string} [password]
- * @property {awarenessProtocol.Awareness} [awareness]
- * @property {number} [maxConns]
- * @property {boolean} [filterBcConns]
+ * @property {Array<string>} [signaling] - Array of signaling server URLs
+ * @property {string} [password] - Optional password for encryption
+ * @property {Awareness} [awareness] - Awareness instance
+ * @property {number} [maxConns] - Maximum number of connections
+ * @property {boolean} [filterBcConns] - Whether to filter broadcast connections
+ * @property {'view' | 'edit'} [accessLevel] - Access level for the document ('view' or 'edit')
  * @property {any} [peerOpts]
  */
 
@@ -471,14 +512,10 @@ export class TrysteroProvider extends ObservableV2 {
   /**
    * @class
    * @classdesc Represents a Y.Trystero instance.
-   * @param {YDoc} doc - The Y.Doc instance.
    * @param {string} roomName - The name of the room.
+   * @param {YDoc} doc - The Y.Doc instance.
    * @param {TrysteroRoom} trysteroRoom - The TrysteroRoom instance.
-   * @param {Object} options - The options for the constructor.
-   * @param {string} [options.password] - The password for encryption.
-   * @param {Awareness} [options.awareness=new awarenessProtocol.Awareness(doc)] - The awareness instance.
-   * @param {number} [options.maxConns=20 + Math.floor(Math.random() * 15)] - The maximum number of connections.
-   * @param {boolean} [options.filterBcConns=true] - Whether to filter broadcast connections.
+   * @param {ProviderOptions} opts
    */
   constructor (
     roomName,
@@ -488,13 +525,15 @@ export class TrysteroProvider extends ObservableV2 {
       password,
       awareness = new awarenessProtocol.Awareness(doc),
       maxConns = 20 + math.floor(random.rand() * 15), // the random factor reduces the chance that n clients form a cluster
-      filterBcConns = true
+      filterBcConns = true,
+      accessLevel = 'edit' // Default to 'edit' for backward compatibility
     } = {}
   ) {
     super()
     this.doc = doc
     this.maxConns = maxConns
     this.filterBcConns = filterBcConns
+    this.accessLevel = accessLevel
     /**
      * @type {PromiseLike<CryptoKey | null>}
      */

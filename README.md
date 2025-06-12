@@ -64,7 +64,10 @@ The following default values of `opts` can be overwritten:
   // Whether to disable WebRTC connections to other tabs in the same browser.
   // Tabs within the same browser share document updates using BroadcastChannels.
   // WebRTC connections within the same browser are therefore only necessary if you want to share video information too.
-  filterBcConns: true
+  filterBcConns: true,
+  // Access level for the document. Can be 'view' or 'edit'.
+  // When set to 'view', the client will not be able to modify the document.
+  accessLevel: 'edit'
 }
 ```
 
