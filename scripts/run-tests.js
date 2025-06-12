@@ -7,19 +7,27 @@ const testModules = [
   accessControlTests
 ]
 
-const testResults = await testing.runAllTests({
-  // Run in verbose mode
-  verbose: true,
-  // Exit process with code 1 if tests fail
-  exitOnError: true,
-  // Run all test modules
-  testModules
-})
+async function run () {
+  const testResults = await testing.runAllTests({
+    // Run in verbose mode
+    verbose: true,
+    // Exit process with code 1 if tests fail
+    exitOnError: true,
+    // Run all test modules
+    testModules
+  })
 
-// Print summary
-console.log('\nTest Summary:')
-console.log(`✅ ${testResults.passed} tests passed`)
-if (testResults.failed > 0) {
-  console.error(`❌ ${testResults.failed} tests failed`)
-  process.exit(1)
+  // Print summary
+  console.log('\nTest Summary:')
+  console.log(`✅ ${testResults.passed} tests passed`)
+  if (testResults.failed > 0) {
+    console.error(`❌ ${testResults.failed} tests failed`)
+    process.exit(1)
+  }
 }
+
+// Run the async function and handle any uncaught errors
+run().catch(err => {
+  console.error('Uncaught error in test runner:', err)
+  process.exit(1)
+})

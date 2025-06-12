@@ -10,14 +10,14 @@ import * as dom from 'lib0/dom.js'
  */
 
 const calculateCoordinateFromEvent = (event, el) => {
-  const canvasRect = /** @type {HTMLElement} */ (dom.querySelector(el.shadowRoot, 'canvas')).getBoundingClientRect();
-  const clientX = event.clientX || (event.touches && event.touches[0].clientX);
-  const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+  const canvasRect = /** @type {HTMLElement} */ (dom.querySelector(el.shadowRoot, 'canvas')).getBoundingClientRect()
+  const clientX = event.clientX || (event.touches && event.touches[0].clientX)
+  const clientY = event.clientY || (event.touches && event.touches[0].clientY)
   return {
     x: (clientX - canvasRect.left) / canvasRect.width,
     y: (clientY - canvasRect.top) / canvasRect.height
-  };
-};
+  }
+}
 
 const drawStart = (coord, el) => {
   if (coord.target == null || coord.target.nodeName === 'CANVAS') {
@@ -72,48 +72,47 @@ component.createComponent('y-demo-drawing', {
     connected: (event, el) => {
       const shadow = /** @type {any} */ (el.shadowRoot)
 
-      const drawingCanvas = /** @type {HTMLCanvasElement} */ (dom.querySelector(shadow, 'canvas'))      
+      const drawingCanvas = /** @type {HTMLCanvasElement} */ (dom.querySelector(shadow, 'canvas'))
 
       const resizeCanvas = (canvas) => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      };
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+      }
 
       // Resize the canvas on initialization
-      resizeCanvas(drawingCanvas);
+      resizeCanvas(drawingCanvas)
 
       // Add event listener to resize the canvas on window resize
-      window.addEventListener('resize', () => resizeCanvas(drawingCanvas));
+      window.addEventListener('resize', () => resizeCanvas(drawingCanvas))
 
-      drawingCanvas.addEventListener('touchstart', event => {        
-        event.preventDefault();
+      drawingCanvas.addEventListener('touchstart', event => {
+        event.preventDefault()
         if (event.touches.length === 1) {
           drawStart(event.touches[0], el)
         }
-        return false;        
+        return false
       })
-      drawingCanvas.addEventListener('touchcancel', event => {        
+      drawingCanvas.addEventListener('touchcancel', event => {
         clearCurrPath(event, el)
       })
-      drawingCanvas.addEventListener('touchend', event => {        
-        event.preventDefault();
-        clearCurrPath(event, el);
+      drawingCanvas.addEventListener('touchend', event => {
+        event.preventDefault()
+        clearCurrPath(event, el)
       })
-      drawingCanvas.addEventListener('touchmove', event => {        
-        event.preventDefault();
+      drawingCanvas.addEventListener('touchmove', event => {
+        event.preventDefault()
         if (event.touches.length === 1) {
-          const touch = event.touches[0];
-          moveDraw(touch, el);
+          const touch = event.touches[0]
+          moveDraw(touch, el)
         }
-        return false;
+        return false
       })
-
     },
     mousedown: drawStart,
     mouseleave: clearCurrPath,
     mouseup: clearCurrPath,
-    mousemove: moveDraw,
-  },  
+    mousemove: moveDraw
+  },
   onStateChange: (state, prevState, el) => {
     const shadow = /** @type {any} */ (el.shadowRoot)
     const drawingCanvas = /** @type {HTMLCanvasElement} */ (dom.querySelector(shadow, 'canvas'))
