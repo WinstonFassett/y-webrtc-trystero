@@ -27,10 +27,13 @@
     "dist": "rollup -c",
     "types": "tsc",
     "watch": "rollup -wc",
-    "test": "npm run lint",
+    "test": "npm run test:run",
+    "test:run": "node scripts/run-tests.js",
+    "test:watch": "nodemon --exec 'npm run test:run' --watch src --watch test",
     "lint": "standard && tsc",
     "lint:fix": "standard --fix",
-    "preversion": "npm run clean && npm run lint && npm run dist && npm run types"
+    "format": "standard --fix",
+    "preversion": "npm run clean && npm run lint && npm test && npm run dist && npm run types"
   },
   "files": [
     "dist/*",
@@ -68,6 +71,7 @@
     "gh-pages": "^6.1.1",
     "http-server": "^0.12.3",
     "lit-html": "^1.1.0",
+    "nodemon": "^3.1.10",
     "rollup": "^1.32.1",
     "rollup-cli": "^1.0.9",
     "rollup-plugin-copy": "^3.5.0",
