@@ -11,7 +11,7 @@ if (isBrowser) {
   log.createVConsole(document.body)
 }
 
-async function run() {
+async function run () {
   const success = await runTests({
     'access-control': testAccessControl,
     'password-auth': testPasswordAuth,

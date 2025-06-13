@@ -28,7 +28,7 @@ export const testAccessControl = async tc => {
   const provider2 = new TrysteroProvider(roomName, doc2, mockTrysteroRoom, {
     accessLevel: 'view'
   })
-  
+
   // Simulate second peer connection
   mockTrysteroRoom._triggerPeerJoin('peer2')
 
@@ -39,6 +39,7 @@ export const testAccessControl = async tc => {
 
   // Test that view-only client cannot modify the document
   const yarray2 = doc2.get('array', Y.Array)
+  // @ts-ignore
   let viewOnlyError = null
   try {
     yarray2.insert(0, ['blocked'])
@@ -47,15 +48,15 @@ export const testAccessControl = async tc => {
     viewOnlyError = e
     t.pass('View-only client correctly prevented from modifying document')
   }
-  
+
   // Test that view client can read the document
   t.assert(yarray2.length === 1, 'View client should be able to read the document')
   t.assert(yarray2.get(0) === 'hello', 'View client should see the same data as editor')
-  
+
   // Test that changes from editor are visible to view client
   yarray1.insert(1, ['world'])
   t.assert(yarray2.get(1) === 'world', 'View client should receive updates from editor')
-  
+
   // Test that view client cannot perform unauthorized operations
   try {
     yarray2.delete(0, 1)

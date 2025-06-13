@@ -16,7 +16,7 @@ const gcFilter = item => !Y.isParentOf(prosemirrorEditorContent, item)
 export const doc = new Y.Doc({ gcFilter })
 
 // Initialize Trystero room with password
-export const trysteroRoom = joinRoom({ 
+export const trysteroRoom = joinRoom({
   appId: APP_ID,
   password: ROOM_PASSWORD // Add password for encryption
 }, ROOM_ID)
@@ -74,7 +74,7 @@ permanentUserData.setUserMapping(doc, doc.clientID, 'local', {
  * Generate a random color for the user
  * @returns {{color: string, light: string}}
  */
-function getRandomColor() {
+function getRandomColor () {
   const hue = Math.floor(Math.random() * 360)
   return {
     color: `hsl(${hue}, 70%, 50%)`,

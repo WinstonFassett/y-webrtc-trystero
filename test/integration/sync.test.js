@@ -15,16 +15,16 @@ export const testBasicSync = async tc => {
   // Create mock Trystero rooms with test utilities
   const room1 = createMockTrysteroRoom()
   const room2 = createMockTrysteroRoom()
-  
+
   // Simulate network between rooms
   const [send1, on1] = room1.makeAction('docdata')
   const [send2, on2] = room2.makeAction('docdata')
-  
+
   on1((data, peerId) => {
     // Simulate network delay
     setTimeout(() => send2(data, 'peer1'), 10)
   })
-  
+
   on2((data, peerId) => {
     // Simulate network delay
     setTimeout(() => send1(data, 'peer2'), 10)
@@ -44,7 +44,7 @@ export const testBasicSync = async tc => {
   // Test basic sync from doc1 to doc2
   const array1 = doc1.getArray('test')
   array1.insert(0, ['hello'])
-  
+
   // Wait for sync with timeout
   try {
     await waitFor(() => doc2.getArray('test').length > 0, 1000)
@@ -53,11 +53,11 @@ export const testBasicSync = async tc => {
   } catch (e) {
     t.fail('doc2 did not receive update from doc1')
   }
-  
+
   // Test sync in the opposite direction (doc2 to doc1)
   const array2 = doc2.getArray('test')
   array2.insert(1, ['world'])
-  
+
   try {
     await waitFor(() => array1.length > 1, 1000)
     t.pass('doc1 received update from doc2')
@@ -65,11 +65,11 @@ export const testBasicSync = async tc => {
   } catch (e) {
     t.fail('doc1 did not receive update from doc2')
   }
-  
+
   // Test concurrent modifications
   array1.insert(2, ['from1'])
   array2.insert(3, ['from2'])
-  
+
   try {
     await waitFor(() => array1.length === 4 && array2.length === 4, 1000)
     t.pass('Both docs should have all updates')

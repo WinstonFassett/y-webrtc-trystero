@@ -4,11 +4,11 @@
  */
 export const createMockTrysteroRoom = () => {
   const subscribers = []
-  
+
   return {
     makeAction: (name) => {
       const actionSubscribers = []
-      
+
       return [
         (data, peerId) => {
           actionSubscribers.forEach(cb => cb(data, peerId))

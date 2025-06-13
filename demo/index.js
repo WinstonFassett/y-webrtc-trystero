@@ -1,11 +1,11 @@
 /* eslint-env browser */
 
-import { 
-  doc, 
+import {
+  doc,
   trysteroProvider as provider,
   drawingContent,
   prosemirrorEditorContent,
-  permanentUserData 
+  permanentUserData
 } from './sharedTypes.js'
 import * as drawing from './drawing.js'
 import { drawingDemo } from './elements.js'
@@ -49,12 +49,12 @@ Object.assign(window, {
     permanentUserData
   },
   // Keep backward compatibility
-  example: { 
-    provider, 
-    doc, 
-    yarray, 
-    drawing, 
-    drawingDemo 
+  example: {
+    provider,
+    doc,
+    yarray,
+    drawing,
+    drawingDemo
   }
 })
 
