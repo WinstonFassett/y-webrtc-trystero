@@ -1,36 +1,42 @@
 {
-  "name": "y-trystero",
-  "version": "10.3.0",
-  "description": "WebRTC provider for Yjs",
+  "name": "y-webrtc-trystero",
+  "version": "10.3.0-20250613",
+  "description": "Yjs provider using Trystero for WebRTC signaling",
+  "author": "Winston Fassett <winston.fassett@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/WinstonFassett/y-webrtc-trystero#readme",
   "type": "module",
-  "main": "./dist/y-trystero.cjs",
-  "types": "./dist/src/y-trystero.d.ts",
-  "module": "./src/y-trystero.js",
-  "unpkg": "./src/y-trystero.mjs",
+  "main": "./dist/y-webrtc-trystero.cjs",
+  "types": "./dist/src/y-webrtc-trystero.d.ts",
+  "module": "./src/y-webrtc-trystero.js",
+  "unpkg": "./src/y-webrtc-trystero.mjs",
   "sideEffects": false,
   "funding": {
     "type": "GitHub Sponsors ❤",
     "url": "https://github.com/sponsors/dmonad"
   },
   "exports": {
-    "module": "./src/y-trystero.js",
-    "import": "./src/y-trystero.js",
-    "require": "./dist/y-trystero.cjs",
-    "types": "./dist/src/y-trystero.d.ts"
+    "module": "./src/y-webrtc-trystero.js",
+    "import": "./src/y-webrtc-trystero.js",
+    "require": "./dist/y-webrtc-trystero.cjs",
+    "types": "./dist/src/y-webrtc-trystero.d.ts"
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "start": "node ./bin/server.js",
-    "debug": "concurrently 'http-server -o index.html' 'npm run watch'",
-    "demo": "SERVE=true npm run watch",
-    "deploy": "npm run dist && gh-pages -d dist/demo",
+    "start": "cd demo && npm run dev",
+    "demo": "cd demo && npm run dev",
+    "demo:build": "cd demo && npm run build",
+    "deploy": "npm run demo:build && gh-pages -d demo/dist",
     "dist": "rollup -c",
     "types": "tsc",
     "watch": "rollup -wc",
-    "test": "npm run lint",
+    "test": "npm run test:run",
+    "test:run": "node scripts/run-tests.js",
+    "test:watch": "nodemon --exec 'npm run test:run' --watch src --watch test",
     "lint": "standard && tsc",
     "lint:fix": "standard --fix",
-    "preversion": "npm run clean && npm run lint && npm run dist && npm run types"
+    "format": "standard --fix",
+    "preversion": "npm run clean && npm run lint && npm test && npm run dist && npm run types"
   },
   "files": [
     "dist/*",
@@ -38,19 +44,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/WinstonFassett/y-trystero.git"
+    "url": "https://github.com/WinstonFassett/y-webrtc-trystero.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WinstonFassett/y-webrtc-trystero/issues"
   },
   "keywords": [
     "Yjs",
     "Trystero",
     "WebRTC"
   ],
-  "author": "Winston Fassett <winston.fassett@gmail.com>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/WinstonFassett/y-trystero/issues"
-  },
-  "homepage": "https://github.com/WinstonFassett/y-trystero#readme",
   "standard": {
     "ignore": [
       "/dist",
@@ -68,6 +71,7 @@
     "gh-pages": "^6.1.1",
     "http-server": "^0.12.3",
     "lit-html": "^1.1.0",
+    "nodemon": "^3.1.10",
     "rollup": "^1.32.1",
     "rollup-cli": "^1.0.9",
     "rollup-plugin-copy": "^3.5.0",
@@ -79,7 +83,7 @@
     "yjs": "^13.6.8"
   },
   "peerDependencies": {
-    "trystero": "^0.18.0",
+    "trystero": "^0.21.5",
     "yjs": "^13.6.8"
   },
   "optionalDependencies": {

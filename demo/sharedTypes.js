@@ -1,80 +1,88 @@
-
 import * as Y from 'yjs'
-import { TrysteroProvider } from '../src/y-trystero.js'
+import { TrysteroProvider } from 'y-webrtc-trystero'
 import { joinRoom } from 'trystero'
-// import { IndexeddbPersistence, storeState } from 'y-indexeddb'
 
-const lastSnapshot = null
+// Configuration
+const SUFFIX = '-v3'
+const APP_ID = 'y-webrtc-trystero-demo' + SUFFIX
+const ROOM_ID = 'y-webrtc-trystero-demo-room' + SUFFIX
+// Set a password for the room (in a real app, this would be configurable)
+const ROOM_PASSWORD = 'demo-password-123'
 
-/**
- * @param {Y.Item} item
- * @return {boolean}
- */
-const gcFilter = item => !Y.isParentOf(prosemirrorEditorContent, item) || (lastSnapshot && (lastSnapshot.sv.get(item.id.client) || 0) <= item.id.clock)
+// Create Y.Doc with garbage collection filter
+const gcFilter = item => !Y.isParentOf(prosemirrorEditorContent, item)
 
-const suffix = '-v3'
-
-export const versionDoc = new Y.Doc()
-// this websocket provider doesn't connect
-// export const versionWebsocketProvider = new WebsocketProvider(websocketUrl, 'yjs-website-version' + suffix, versionDoc, { connect: false })
-// versionWebsocketProvider.connectBc() // only connect via broadcastchannel
-// export const versionIndexeddbPersistence = new IndexeddbPersistence('yjs-website-version' + suffix, versionDoc)
-export const versionType = versionDoc.getArray('versions')
-
+// Initialize documents
 export const doc = new Y.Doc({ gcFilter })
-// export const websocketProvider = new WebsocketProvider(websocketUrl, 'yjs-website' + suffix, doc)
-export const appId = 'y-trystero-demo' + suffix
-export const roomId = 'y-trystero-demo-room' + suffix
-export const trysteroRoom = joinRoom({ appId }, roomId)
-export const trysteroProvider = new TrysteroProvider(roomId, doc, trysteroRoom)
-export const awareness = trysteroProvider.awareness // websocketProvider.awareness
 
-// export const indexeddbPersistence = new IndexeddbPersistence('yjs-website' + suffix, doc)
+// Initialize Trystero room with password
+export const trysteroRoom = joinRoom({
+  appId: APP_ID,
+  password: ROOM_PASSWORD // Add password for encryption
+}, ROOM_ID)
 
+// Create provider with password
+export const trysteroProvider = new TrysteroProvider(
+  ROOM_ID,
+  doc,
+  trysteroRoom,
+  {
+    password: ROOM_PASSWORD,
+    accessLevel: 'edit' // Allow editing by default
+  }
+)
+
+export const awareness = trysteroProvider.awareness
+
+// Initialize document structures
 export const prosemirrorEditorContent = doc.getXmlFragment('prosemirror')
 
-// versionIndexeddbPersistence.on('synced', () => {
-//   lastSnapshot = versionType.length > 0 ? Y.decodeSnapshot(versionType.get(0).snapshot) : Y.emptySnapshot
-//   versionType.observe(() => {
-//     if (versionType.length > 0) {
-//       const nextSnapshot = Y.decodeSnapshot(versionType.get(0).snapshot)
-//       undoManager.clear()
-//       Y.tryGc(nextSnapshot.ds, doc.store, gcFilter)
-//       lastSnapshot = nextSnapshot
-//       storeState(indexeddbPersistence)
-//     }
-//   })
-// })
-
+// Simple user data management
 class LocalRemoteUserData extends Y.PermanentUserData {
   /**
-   * @param {number} clientid
-   * @return {string}
+   * @param {Y.Doc} doc
+   * @param {Y.Map<any>} userType
    */
-  getUserByClientId (clientid) {
-    return super.getUserByClientId(clientid) || 'remote'
+  constructor (doc, userType) {
+    super(doc, userType, 'local')
+    this.userType = userType
   }
 
   /**
-   * @param {Y.ID} id
-   * @return {string}
+   * @param {Y.Doc} doc
+   * @param {number} clientid
+   * @param {string} username
+   * @param {Object} userinfo
    */
-  getUserByDeletedId (id) {
-    return super.getUserByDeletedId(id) || 'remote'
+  setUserMapping (doc, clientid, username, userinfo) {
+    super.setUserMapping(doc, clientid, username, userinfo)
   }
 }
 
-export const permanentUserData = new LocalRemoteUserData(doc, versionDoc.getMap('users'))
-// versionIndexeddbPersistence.whenSynced.then(() => {
-//   permanentUserData.setUserMapping(doc, doc.clientID, 'local', {})
-// })
+// Initialize user data
+export const versionDoc = new Y.Doc()
+const userType = versionDoc.getMap('users')
+export const permanentUserData = new LocalRemoteUserData(doc, userType)
+
+// Set initial user mapping
+permanentUserData.setUserMapping(doc, doc.clientID, 'local', {
+  name: 'User-' + Math.random().toString(36).substr(2, 5),
+  color: getRandomColor()
+})
 
 /**
- * An array of draw element.
- * A draw element is a Y.Map that has a type attribute. We will support only type "path", but you could also define type "text", or type "rectangle".
- *
- * @type {Y.Array<Y.Map<Y.Array|String|object>>}
+ * Generate a random color for the user
+ * @returns {{color: string, light: string}}
  */
+function getRandomColor () {
+  const hue = Math.floor(Math.random() * 360)
+  return {
+    color: `hsl(${hue}, 70%, 50%)`,
+    light: `hsla(${hue}, 70%, 50%, 0.2)`
+  }
+}
+
+// Initialize drawing content
 export const drawingContent = doc.getArray('drawing')
 
 let undoManager = null
@@ -94,9 +102,5 @@ window.versionDoc = versionDoc
 window.awareness = awareness
 // @ts-ignore
 window.trysteroProvider = trysteroProvider
-// @ts-ignore
-// window.websocketProvider = websocketProvider
-// @ts-ignore
-// window.indexeddbPersistence = indexeddbPersistence
 // @ts-ignore
 window.prosemirrorEditorContent = prosemirrorEditorContent
