@@ -39,13 +39,10 @@ export const testAccessControl = async tc => {
 
   // Test that view-only client cannot modify the document
   const yarray2 = doc2.get('array', Y.Array)
-  // @ts-ignore
-  let viewOnlyError = null
   try {
     yarray2.insert(0, ['blocked'])
     t.fail('View-only client should not be able to modify the document')
   } catch (e) {
-    viewOnlyError = e
     t.pass('View-only client correctly prevented from modifying document')
   }
 
