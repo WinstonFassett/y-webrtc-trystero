@@ -1,7 +1,10 @@
 {
   "name": "y-webrtc-trystero",
   "version": "10.3.0-20250613",
-  "description": "WebRTC provider for Yjs",
+  "description": "Yjs provider using Trystero for WebRTC signaling",
+  "author": "Winston Fassett <winston.fassett@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/WinstonFassett/y-webrtc-trystero#readme",
   "type": "module",
   "main": "./dist/y-webrtc-trystero.cjs",
   "types": "./dist/src/y-webrtc-trystero.d.ts",
@@ -41,19 +44,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/WinstonFassett/y-webrtc-trystero.git"
+    "url": "https://github.com/WinstonFassett/y-webrtc-trystero.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WinstonFassett/y-webrtc-trystero/issues"
   },
   "keywords": [
     "Yjs",
     "Trystero",
     "WebRTC"
   ],
-  "author": "Winston Fassett <winston.fassett@gmail.com>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/WinstonFassett/y-webrtc-trystero/issues"
-  },
-  "homepage": "https://github.com/WinstonFassett/y-webrtc-trystero#readme",
   "standard": {
     "ignore": [
       "/dist",

@@ -1,6 +1,43 @@
-# Trystero WebRTC connector for [Yjs](https://github.com/yjs/yjs)
+# y-webrtc-trystero
 
-Propagates document updates peer-to-peer to all users using WebRTC connected via [Trystero](https://github.com/dmotz/trystero).
+> Fork of y-webrtc with Trystero as the WebRTC signaling mechanism
+
+A WebRTC connector for [Yjs](https://github.com/yjs/yjs) that uses [Trystero](https://github.com/dmotz/trystero) for signaling.
+
+## About This Fork
+
+This is a fork of the original [y-webrtc](https://github.com/yjs/y-webrtc) that replaces the default signaling mechanism with [Trystero](https://github.com/dmotz/trystero). This provides more flexibility in signaling server configuration and additional features like room discovery.
+
+### Key Differences from Original
+- Uses Trystero for signaling instead of the default signaling servers
+- Supports all Trystero backends (Firebase, IPFS, etc.)
+- Maintains the same Yjs provider interface for easy migration
+
+## Installation
+
+```bash
+npm install y-webrtc-trystero
+```
+
+## Basic Usage
+
+```javascript
+import * as Y from 'yjs'
+import { TrysteroProvider } from 'y-webrtc-trystero'
+
+const doc = new Y.Doc()
+const provider = new TrysteroProvider({
+  room: 'your-room-name',
+  config: {
+    // Trystero configuration
+    appId: 'your-app-id',
+    // ... other Trystero options
+  }
+}, doc)
+
+doc.on('sync', isSynced => {
+  console.log(`Document ${isSynced ? 'synced' : 'syncing...'}`)
+})
 
 * Fast message propagation
 * Encryption and authorization over untrusted signaling servers
