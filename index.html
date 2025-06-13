@@ -3,11 +3,131 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>y-trystero demo</title>
-    <link rel="stylesheet" href="./main.css">
+    <title>y-webrtc-trystero demo</title>
+    <style>
+      #status-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 16px;
+        font-family: monospace;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+      }
+      #connection-status {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ccc;
+        margin-right: 8px;
+      }
+      #connection-status.connected {
+        background: #4caf50;
+      }
+      #connection-status.disconnected {
+        background: #f44336;
+      }
+      #connection-info {
+        display: flex;
+        align-items: center;
+      }
+      #room-info {
+        margin-left: 16px;
+        opacity: 0.8;
+      }
+    </style>
+  <script type="module" crossorigin src="/assets/index-DanoRiOZ.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DRk4R65z.css">
 </head>
 <body>
   <y-demo-drawing></y-demo-drawing>
-  <script type="text/javascript" src="index.js"></script>
+  
+  <div id="status-bar">
+    <div id="connection-info">
+      <span id="connection-status" class="disconnected"></span>
+      <span id="connection-status-text">Disconnected</span>
+    </div>
+    <div id="room-info">
+      Room: <span id="room-id">Loading...</span>
+    </div>
+    <div id="client-info">
+      Client: <span id="client-id">-</span>
+    </div>
+  </div>
+
+  <script>
+    // Wait for the ytrystero object to be available and doc to be ready
+    const checkYtrystero = setInterval(() => {
+      if (window.ytrystero && window.ytrystero.doc) {
+        clearInterval(checkYtrystero);
+        setupStatusBar();
+      }
+    }, 100);
+
+    // Set a timeout to stop checking after 5 seconds
+    setTimeout(() => {
+      clearInterval(checkYtrystero);
+      const statusEl = document.getElementById('connection-status');
+      const statusText = document.getElementById('connection-status-text');
+      if (statusEl && statusText && !window.ytrystero) {
+        statusEl.className = 'disconnected';
+        statusText.textContent = 'Failed to initialize';
+      }
+    }, 5000);
+
+    function setupStatusBar() {
+      try {
+        const { provider, doc } = window.ytrystero || {};
+        if (!provider || !doc) {
+          console.error('ytrystero provider or doc not available');
+          return;
+        }
+
+        const statusEl = document.getElementById('connection-status');
+        const statusText = document.getElementById('connection-status-text');
+        const roomIdEl = document.getElementById('room-id');
+        const clientIdEl = document.getElementById('client-id');
+
+        if (!statusEl || !statusText || !roomIdEl || !clientIdEl) {
+          console.error('Status bar elements not found');
+          return;
+        }
+
+        // Update room and client info
+        roomIdEl.textContent = provider.roomName || 'unknown';
+        
+        // Safely get client ID
+        const clientId = doc.clientID || '';
+        clientIdEl.textContent = clientId ? 
+          (clientId.length > 8 ? clientId.substring(0, 8) + '...' : clientId) : 
+          'unknown';
+
+        // Listen for connection status changes
+        const updateStatus = (synced) => {
+          if (synced) {
+            statusEl.className = 'connected';
+            statusText.textContent = 'Connected';
+          } else {
+            statusEl.className = 'disconnected';
+            statusText.textContent = 'Disconnected';
+          }
+        };
+
+        provider.on('synced', updateStatus);
+        
+        // Initial state
+        updateStatus(provider.synced);
+      } catch (error) {
+        console.error('Error setting up status bar:', error);
+      }
+    }
+  </script>
 </body>
 </html>
