@@ -19,50 +19,70 @@ This is a fork of the original [y-webrtc](https://github.com/yjs/y-webrtc) that 
 npm install y-webrtc-trystero
 ```
 
+## Installation
+
+```bash
+npm install y-webrtc-trystero
+```
+
 ## Basic Usage
 
 ```javascript
 import * as Y from 'yjs'
 import { TrysteroProvider } from 'y-webrtc-trystero'
+import { joinRoom } from 'trystero'
 
+// Configuration
+const APP_ID = 'your-app-id' // Unique identifier for your app
+const ROOM_ID = 'your-room-name' // Shared room identifier for all clients
+const ROOM_PASSWORD = 'optional-room-password' // Optional password for encryption
+
+// Create a Y.Doc
 const doc = new Y.Doc()
-const provider = new TrysteroProvider({
-  room: 'your-room-name',
-  config: {
-    // Trystero configuration
-    appId: 'your-app-id',
-    // ... other Trystero options
-  }
-}, doc)
 
+// Initialize Trystero room with optional password
+// Note: Trystero always uses encryption, but you can add an additional password for room access
+const trysteroRoom = joinRoom({
+  appId: APP_ID,
+  password: ROOM_PASSWORD // Optional: Add a password for room access
+}, ROOM_ID)
+
+// Create the provider
+const provider = new TrysteroProvider(
+  ROOM_ID,      // Room identifier
+  doc,           // Y.Doc instance
+  trysteroRoom,  // Trystero room instance
+  {
+    password: ROOM_PASSWORD, // Optional: same password used in joinRoom
+    maxConns: 30,             // Optional: maximum peer connections
+    awareness: new awarenessProtocol.Awareness(doc) // Optional: awareness protocol
+  }
+)
+
+// Access shared data
+const yarray = doc.getArray('shared-array')
+const ymap = doc.getMap('shared-map')
+
+// Listen for sync status
 doc.on('sync', isSynced => {
   console.log(`Document ${isSynced ? 'synced' : 'syncing...'}`)
 })
+```
 
-* Fast message propagation
-* Encryption and authorization over untrusted signaling servers
-* No setup required, public signaling servers are available
-* Very little server load
-* Not suited for a large amount of collaborators on a single document (each peer is connected to each other)
+### Key Features
+
+* Fast message propagation using WebRTC
+* Built-in end-to-end encryption (always enabled)
+* Works with any Trystero backend (Firebase, IPFS, etc.)
+* Low server load with peer-to-peer connections
+* Automatic reconnection and sync status tracking
 
 ## Setup
 
 ### Install
 
-```sh
-npm i y-webrtc-trystero
-```
-
-### Client code
-
-```js
-import * as Y from 'yjs'
-import { TrysteroProvider } from 'y-webrtc-trystero'
-
-const ydoc = new Y.Doc()
-// clients connected to the same room-name share document updates
-const provider = new TrysteroProvider('your-room-name', ydoc, trysteroRoom, { password: 'optional-room-password' })
-const yarray = ydoc.get('array', Y.Array)
+```bash
+npm install y-webrtc-trystero trystero yjs
 ```
 ### Communication Restrictions
 
