@@ -1,6 +1,6 @@
 # Trystero WebRTC connector for [Yjs](https://github.com/yjs/yjs)
 
-Propagates document updates peer-to-peer to all users using WebRTC connected using [y-webrtc-trystero](https://github.com/dmotz/y-webrtc-trystero).
+Propagates document updates peer-to-peer to all users using WebRTC connected via [Trystero](https://github.com/dmotz/trystero).
 
 * Fast message propagation
 * Encryption and authorization over untrusted signaling servers
@@ -13,14 +13,14 @@ Propagates document updates peer-to-peer to all users using WebRTC connected usi
 ### Install
 
 ```sh
-npm i y-y-webrtc-trystero
+npm i y-webrtc-trystero
 ```
 
 ### Client code
 
 ```js
 import * as Y from 'yjs'
-import { TrysteroProvider } from 'y-y-webrtc-trystero'
+import { TrysteroProvider } from 'y-webrtc-trystero'
 
 const ydoc = new Y.Doc()
 // clients connected to the same room-name share document updates
@@ -29,8 +29,7 @@ const yarray = ydoc.get('array', Y.Array)
 ```
 ### Communication Restrictions
 
-y-y-webrtc-trystero is restricted by the number of peers that the web browser can create. By default, every client is connected to every other client up until the maximum number of conns is reached. The clients will still sync if every client is connected at least indirectly to every other client. Theoretically, y-y-webrtc-trystero allows an unlimited number of users, but at some point it can't be guaranteed anymore that the clients sync any longer**. Because we don't want to be greedy,
-y-y-webrtc-trystero has a restriction to connect to a maximum of `20 + math.floor(random.rand() * 15)` peers. The value has a random factor in order to prevent clients to form clusters, that can't connect to other clients. The value can be adjusted using the `maxConn` option. I.e.
+y-webrtc-trystero is restricted by the number of peers that the web browser can create. By default, every client is connected to every other client up until the maximum number of conns is reached. The clients will still sync if every client is connected at least indirectly to every other client. Theoretically, y-webrtc-trystero allows an unlimited number of users, but at some point it can't be guaranteed anymore that the clients sync any longer. The default maximum connections is set to `20 + math.floor(random.rand() * 15)` peers. The random factor helps prevent clients from forming isolated clusters. You can adjust this using the `maxConns` option. For example:
 
 ```js
 const provider = new TrysteroProvider('your-room-name', ydoc, trysteroRoom, { maxConns: 70 + math.floor(random.rand() * 70) })
@@ -38,7 +37,7 @@ const provider = new TrysteroProvider('your-room-name', ydoc, trysteroRoom, { ma
 
 ** A gifted mind could use this as an exercise and calculate the probability of clusters forming depending on the number of peers in the network. The default value was used to connect at least 100 clients at a conference meeting on a bad network connection.
 
-### Use y-y-webrtc-trystero for conferencing solutions
+### Use y-webrtc-trystero for conferencing solutions
 
 Just listen to the "peers" event from the provider to listen for more incoming WebRTC connections and use the [Trystero library](https://github.com/dmotz/y-webrtc-trystero) to share streams. More help on this would be welcome. By default, browser windows share data using BroadcastChannel without WebRTC. In order to connect all peers and browser windows with each other, set `maxConns = Number.POSITIVE_INFINITY` and `filterBcConns = false`.
 
@@ -73,23 +72,26 @@ The following default values of `opts` can be overwritten:
 
 ## Logging
 
-`y-y-webrtc-trystero` uses the `lib0/logging.js` logging library. By default this library disables logging. You can enable it by specifying the `log` environment / localStorage variable:
+`y-webrtc-trystero` uses the `lib0/logging.js` logging library. By default this library disables logging. You can enable it by specifying the `log` environment / localStorage variable:
 
 ```js
 // enable logging for all modules
 localStorage.log = 'true'
-// enable logging only for y-y-webrtc-trystero
-localStorage.log = 'y-y-webrtc-trystero'
+// enable logging only for y-webrtc-trystero
+localStorage.log = 'y-webrtc-trystero'
 // by specifying a regex variables
 localStorage.log = '^y.*'
 ```
 
 ```sh
-# enable y-y-webrtc-trystero logging in nodejs
-LOG='y-y-webrtc-trystero' node index.js
+# enable y-webrtc-trystero logging in nodejs
+LOG='y-webrtc-trystero' node index.js
 ```
 
 ## License
-Yjs is licensed under the [MIT License](./LICENSE).
+This project is licensed under the [MIT License](./LICENSE).
 
-<kevin.jahns@pm.me>
+## Acknowledgments
+- Based on the original work by Kevin Jahns and contributors
+- Uses [Trystero](https://github.com/dmotz/trystero) for WebRTC connections
+- Built on top of [Yjs](https://github.com/yjs/yjs)
