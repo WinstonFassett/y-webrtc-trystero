@@ -1,6 +1,6 @@
 {
   "name": "y-webrtc-trystero",
-  "version": "10.3.0-20250613-beta.0",
+  "version": "10.3.0-20250613-beta.1",
   "description": "Yjs provider using Trystero for WebRTC signaling",
   "author": "Winston Fassett <winston.fassett@gmail.com>",
   "license": "MIT",
