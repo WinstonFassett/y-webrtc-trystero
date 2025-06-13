@@ -1,6 +1,6 @@
 {
   "name": "y-webrtc-trystero",
-  "version": "10.3.0",
+  "version": "10.3.0-20250613",
   "description": "WebRTC provider for Yjs",
   "type": "module",
   "main": "./dist/y-trystero.cjs",
