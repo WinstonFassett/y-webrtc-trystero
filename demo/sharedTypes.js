@@ -1,6 +1,6 @@
 
 import * as Y from 'yjs'
-import { TrysteroProvider } from '../src/y-trystero.js'
+import { TrysteroProvider } from 'y-trystero'
 import { joinRoom } from 'trystero'
 // import { IndexeddbPersistence, storeState } from 'y-indexeddb'
 
