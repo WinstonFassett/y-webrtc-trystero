@@ -1,1 +1,1 @@
-export * from './y-webrtc'
+export * from './y-webrtc-trystero'

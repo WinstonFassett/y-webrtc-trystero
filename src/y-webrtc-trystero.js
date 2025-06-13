@@ -26,7 +26,7 @@ import * as syncProtocol from 'y-protocols/sync'
  * @typedef {import('y-protocols/awareness').Awareness} Awareness
  */
 
-const log = logging.createModuleLogger('y-trystero')
+const log = logging.createModuleLogger('y-webrtc-trystero')
 
 const messageSync = 0
 const messageQueryAwareness = 3

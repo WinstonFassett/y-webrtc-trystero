@@ -3,20 +3,20 @@
   "version": "10.3.0-20250613",
   "description": "WebRTC provider for Yjs",
   "type": "module",
-  "main": "./dist/y-trystero.cjs",
-  "types": "./dist/src/y-trystero.d.ts",
-  "module": "./src/y-trystero.js",
-  "unpkg": "./src/y-trystero.mjs",
+  "main": "./dist/y-webrtc-trystero.cjs",
+  "types": "./dist/src/y-webrtc-trystero.d.ts",
+  "module": "./src/y-webrtc-trystero.js",
+  "unpkg": "./src/y-webrtc-trystero.mjs",
   "sideEffects": false,
   "funding": {
     "type": "GitHub Sponsors ❤",
     "url": "https://github.com/sponsors/dmonad"
   },
   "exports": {
-    "module": "./src/y-trystero.js",
-    "import": "./src/y-trystero.js",
-    "require": "./dist/y-trystero.cjs",
-    "types": "./dist/src/y-trystero.d.ts"
+    "module": "./src/y-webrtc-trystero.js",
+    "import": "./src/y-webrtc-trystero.js",
+    "require": "./dist/y-webrtc-trystero.cjs",
+    "types": "./dist/src/y-webrtc-trystero.d.ts"
   },
   "scripts": {
     "clean": "rm -rf dist",

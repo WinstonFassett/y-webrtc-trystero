@@ -9,7 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // Use the local package
-      'y-trystero': path.resolve(__dirname, '../src/y-trystero.js'),
+      'y-webrtc-trystero': path.resolve(__dirname, '../src/y-webrtc-trystero.js'),
       // Ensure Yjs is only loaded once
       yjs: path.resolve(__dirname, '../node_modules/yjs'),
       lib0: path.resolve(__dirname, '../node_modules/lib0')
@@ -18,7 +18,7 @@ export default defineConfig({
   optimizeDeps: {
     // Ensure these are pre-bundled
     include: ['yjs', 'lib0', 'trystero'],
-    exclude: ['y-trystero']
+    exclude: ['y-webrtc-trystero']
   },
   server: {
     port: 3000,

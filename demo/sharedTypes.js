@@ -1,11 +1,11 @@
 import * as Y from 'yjs'
-import { TrysteroProvider } from 'y-trystero'
+import { TrysteroProvider } from 'y-webrtc-trystero'
 import { joinRoom } from 'trystero'
 
 // Configuration
 const SUFFIX = '-v3'
-const APP_ID = 'y-trystero-demo' + SUFFIX
-const ROOM_ID = 'y-trystero-demo-room' + SUFFIX
+const APP_ID = 'y-webrtc-trystero-demo' + SUFFIX
+const ROOM_ID = 'y-webrtc-trystero-demo-room' + SUFFIX
 // Set a password for the room (in a real app, this would be configurable)
 const ROOM_PASSWORD = 'demo-password-123'
 

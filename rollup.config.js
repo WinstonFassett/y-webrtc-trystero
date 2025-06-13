@@ -21,11 +21,11 @@ const minificationPlugins = process.env.PRODUCTION
   : []
 
 export default {
-  input: './src/y-trystero.js',
+  input: './src/y-webrtc-trystero.js',
   external: id => /^(lib0|yjs|y-protocols|trystero)/.test(id),
   output: [{
-    name: 'y-trystero',
-    file: 'dist/y-trystero.cjs',
+    name: 'y-webrtc-trystero',
+    file: 'dist/y-webrtc-trystero.cjs',
     format: 'cjs',
     sourcemap: true
   }],

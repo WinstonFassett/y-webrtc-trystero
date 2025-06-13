@@ -1,6 +1,6 @@
 import * as t from 'lib0/testing'
 import * as Y from 'yjs'
-import { TrysteroProvider } from '../../src/y-webrtc.js'
+import { TrysteroProvider } from '../../src/y-webrtc-trystero.js'
 import * as prng from 'lib0/prng'
 import { createMockTrysteroRoom, waitFor } from '../test-utils.js'
 

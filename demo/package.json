@@ -1,5 +1,5 @@
 {
-  "name": "y-trystero-demo",
+  "name": "y-webrtc-trystero-demo",
   "version": "1.0.0",
   "type": "module",
   "private": true,
@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "y-trystero": "file:.."
+    "y-webrtc-trystero": "file:.."
   },
   "devDependencies": {
     "vite": "^5.0.0"

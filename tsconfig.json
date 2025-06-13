@@ -15,6 +15,6 @@
     "paths": {
     }
   },
-  "include": ["./src/y-trystero.js"],
+  "include": ["./src/y-webrtc-trystero.js"],
   "exclude": ["./node_modules/trystero/*"]
 }

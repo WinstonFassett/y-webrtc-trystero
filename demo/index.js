@@ -33,7 +33,7 @@ yarray.observeDeep(() => {
 
 // Add some initial data if array is empty
 if (yarray.length === 0) {
-  yarray.insert(0, ['Welcome to y-trystero demo!'])
+  yarray.insert(0, ['Welcome to y-webrtc-trystero demo!'])
 }
 
 // Make objects available in console for debugging
@@ -58,4 +58,4 @@ Object.assign(window, {
   }
 })
 
-console.log('y-trystero demo initialized. Access objects via `ytrystero` in the console.')
+console.log('y-webrtc-trystero demo initialized. Access objects via `ytrystero` in the console.')
