@@ -1,28 +1,25 @@
-import * as testing from 'lib0/testing'
-import * as tests from '../test/crypto.test.js'
-import * as accessControlTests from '../test/access-control.test.js'
+import { runTests } from 'lib0/testing'
+import { isBrowser, isNode } from 'lib0/environment'
+import * as log from 'lib0/logging'
 
-const testModules = [
-  tests,
-  accessControlTests
-]
+// Import test suites
+import { testAccessControl } from '../test/access-control.test.js'
+import { testPasswordAuth } from '../test/integration/password-auth.test.js'
+import { testBasicSync } from '../test/integration/sync.test.js'
 
-async function run () {
-  const testResults = await testing.runAllTests({
-    // Run in verbose mode
-    verbose: true,
-    // Exit process with code 1 if tests fail
-    exitOnError: true,
-    // Run all test modules
-    testModules
+if (isBrowser) {
+  log.createVConsole(document.body)
+}
+
+async function run() {
+  const success = await runTests({
+    'access-control': testAccessControl,
+    'password-auth': testPasswordAuth,
+    'basic-sync': testBasicSync
   })
 
-  // Print summary
-  console.log('\nTest Summary:')
-  console.log(`✅ ${testResults.passed} tests passed`)
-  if (testResults.failed > 0) {
-    console.error(`❌ ${testResults.failed} tests failed`)
-    process.exit(1)
+  if (isNode) {
+    process.exit(success ? 0 : 1)
   }
 }
 

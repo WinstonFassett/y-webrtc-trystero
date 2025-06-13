@@ -1,14 +1,13 @@
-import * as map from 'lib0/map'
-import * as error from 'lib0/error'
-import * as random from 'lib0/random'
-import * as encoding from 'lib0/encoding'
-import * as decoding from 'lib0/decoding'
-import { ObservableV2 } from 'lib0/observable'
-import * as logging from 'lib0/logging'
-import * as promise from 'lib0/promise'
 import * as bc from 'lib0/broadcastchannel'
+import * as decoding from 'lib0/decoding'
+import * as encoding from 'lib0/encoding'
+import * as error from 'lib0/error'
+import * as logging from 'lib0/logging'
+import * as map from 'lib0/map'
 import * as math from 'lib0/math'
 import { createMutex } from 'lib0/mutex'
+import { ObservableV2 } from 'lib0/observable'
+import * as random from 'lib0/random'
 
 import { selfId } from 'trystero'
 
@@ -16,9 +15,8 @@ import { selfId } from 'trystero'
  * @typedef {import('trystero').Room} TrysteroRoom
  */
 
-import * as syncProtocol from 'y-protocols/sync'
 import * as awarenessProtocol from 'y-protocols/awareness'
-import * as cryptoutils from './crypto.js'
+import * as syncProtocol from 'y-protocols/sync'
 
 /**
  * @typedef {import('yjs').Doc} YDoc
@@ -244,7 +242,7 @@ export class TrysteroConn {
       encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, Array.from(awarenessStates.keys())))
       sendTrysteroConn(this, encoder)
     }
-    room.provider.listenDocData((data, peerId) => {
+    provider.listenDocData((data, peerId) => {
       const arr = /** @type {Uint8Array} */ (data)
       try {
         const answer = readPeerMessage(this, arr)
@@ -285,7 +283,11 @@ export class TrysteroConn {
  * @param {TrysteroDocRoom} room
  * @param {Uint8Array} m
  */
-const broadcastBcMessage = (room, m) => cryptoutils.encrypt(m, room.key).then((data) => room.mux(() => bc.publish(room.name, data)))
+const broadcastBcMessage = (room, m) => {
+  room.mux(() => {
+    bc.publish(room.name, m)
+  })
+}
 
 /**
  * @param {TrysteroDocRoom} room
@@ -317,9 +319,9 @@ export class TrysteroDocRoom {
    * @param {YDoc} doc
    * @param {TrysteroProvider} provider
    * @param {string} name
-   * @param {CryptoKey|null} key
+   * @param {string|undefined} password
    */
-  constructor (doc, provider, name, key) {
+  constructor (doc, provider, name, password) {
     this.peerId = selfId
     this.doc = doc
     /**
@@ -329,8 +331,7 @@ export class TrysteroDocRoom {
     this.provider = provider
     this.synced = false
     this.name = name
-    // @todo make key secret by scoping
-    this.key = key
+    this.password = password
     /**
      * @type {Map<string, TrysteroConn>}
      */
@@ -344,15 +345,14 @@ export class TrysteroDocRoom {
     /**
      * @param {ArrayBuffer} data
      */
-    this._bcSubscriber = data =>
-      cryptoutils.decrypt(new Uint8Array(data), key).then(m =>
-        this.mux(() => {
-          const reply = readMessage(this, m, () => {})
-          if (reply) {
-            broadcastBcMessage(this, encoding.toUint8Array(reply))
-          }
-        })
-      )
+    this._bcSubscriber = data => {
+      this.mux(() => {
+        const reply = readMessage(this, new Uint8Array(data), () => {})
+        if (reply) {
+          broadcastBcMessage(this, encoding.toUint8Array(reply))
+        }
+      })
+    }
     /**
      * Listens to Yjs updates and sends them to remote peers
      *
@@ -476,15 +476,15 @@ export class TrysteroDocRoom {
  * @param {YDoc} doc
  * @param {TrysteroProvider} provider
  * @param {string} name
- * @param {CryptoKey|null} key
+ * @param {string|undefined} password
  * @return {TrysteroDocRoom}
  */
-const openRoom = (doc, provider, name, key) => {
+const openRoom = (doc, provider, name, password) => {
   // there must only be one room
   if (rooms.has(name)) {
     throw error.create(`A Yjs Doc connected to room "${name}" already exists!`)
   }
-  const room = new TrysteroDocRoom(doc, provider, name, key)
+  const room = new TrysteroDocRoom(doc, provider, name, password)
   room.connectToDoc()
   rooms.set(name, /** @type {TrysteroDocRoom} */ (room))
   return room
@@ -534,10 +534,7 @@ export class TrysteroProvider extends ObservableV2 {
     this.maxConns = maxConns
     this.filterBcConns = filterBcConns
     this.accessLevel = accessLevel
-    /**
-     * @type {PromiseLike<CryptoKey | null>}
-     */
-    this.key = password ? cryptoutils.deriveKey(password, roomName) : /** @type {PromiseLike<null>} */ (promise.resolve(null))
+    this.password = password
     this.trystero = trysteroRoom
     /**
      * @type {TrysteroDocRoom|null}
@@ -548,10 +545,12 @@ export class TrysteroProvider extends ObservableV2 {
      * @type {awarenessProtocol.Awareness}
      */
     this.awareness = awareness
-    this.key.then((key) => {
-      this.room = openRoom(doc, this, roomName, key)
-    })
-    doc.on('destroy', () => this.destroy)
+
+    // Create the room with the password
+    this.room = openRoom(doc, this, roomName, password)
+    doc.on('destroy', () => this.destroy())
+
+    // Set up Trystero actions
     const [sendDocData, listenDocData] = trysteroRoom.makeAction('docdata')
     this.sendDocData = sendDocData
     this.listenDocData = listenDocData
@@ -559,14 +558,12 @@ export class TrysteroProvider extends ObservableV2 {
 
   destroy () {
     this.doc.off('destroy', this.destroy)
-    // need to wait for key before deleting room
-    this.key.then(() => {
-      if (this.room) {
-        rooms.delete(this.room.name)
-        this.room.destroy()
-        this.room = undefined
-      }
-    })
+    // Clean up the room immediately
+    if (this.room) {
+      this.room.destroy()
+      rooms.delete(this.roomName)
+    }
+    this.emit('destroy', [])
     super.destroy()
   }
 }
