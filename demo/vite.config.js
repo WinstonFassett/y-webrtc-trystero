@@ -1,8 +1,8 @@
-import { defineConfig } from 'vite';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { defineConfig } from 'vite'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   root: __dirname,
@@ -11,8 +11,8 @@ export default defineConfig({
       // Use the local package
       'y-trystero': path.resolve(__dirname, '../src/y-trystero.js'),
       // Ensure Yjs is only loaded once
-      'yjs': path.resolve(__dirname, '../node_modules/yjs'),
-      'lib0': path.resolve(__dirname, '../node_modules/lib0')
+      yjs: path.resolve(__dirname, '../node_modules/yjs'),
+      lib0: path.resolve(__dirname, '../node_modules/lib0')
     }
   },
   optimizeDeps: {
@@ -31,4 +31,4 @@ export default defineConfig({
       transformMixedEsModules: true
     }
   }
-});
+})
