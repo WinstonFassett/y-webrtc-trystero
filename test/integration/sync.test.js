@@ -31,7 +31,7 @@ export const testBasicSync = async tc => {
   })
 
   // Create two providers that should sync
-  const provider1 = new TrysteroProvider(roomName, doc1 , {
+  const provider1 = new TrysteroProvider(roomName, doc1, {
     appId: 'test-app',
     trysteroRoom: room1,
     accessLevel: 'edit'

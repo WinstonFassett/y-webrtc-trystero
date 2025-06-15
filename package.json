@@ -1,33 +1,42 @@
 {
   "name": "y-webrtc-trystero",
-  "version": "10.3.0-20250613-beta.1",
+  "version": "0.1.0",
   "description": "y-webrtc fork that uses Trystero for WebRTC connections and end-to-end encryption",
   "author": "Winston Fassett <dev@winstonfassett.com>",
   "license": "MIT",
   "homepage": "https://github.com/WinstonFassett/y-webrtc-trystero#readme",
   "type": "module",
-  "main": "./dist/y-webrtc-trystero.cjs",
-  "types": "./dist/src/y-webrtc-trystero.d.ts",
-  "module": "./src/y-webrtc-trystero.js",
-  "unpkg": "./src/y-webrtc-trystero.mjs",
+  "main": "dist/y-webrtc-trystero.cjs",
+  "module": "dist/y-webrtc-trystero.mjs",
+  "types": "dist/types/src/y-webrtc-trystero.d.ts",
+  "unpkg": "dist/y-webrtc-trystero.mjs",
   "sideEffects": false,
   "funding": {
     "type": "GitHub Sponsors ❤",
     "url": "https://github.com/sponsors/dmonad"
   },
   "exports": {
-    "module": "./src/y-webrtc-trystero.js",
-    "import": "./src/y-webrtc-trystero.js",
-    "require": "./dist/y-webrtc-trystero.cjs",
-    "types": "./dist/src/y-webrtc-trystero.d.ts"
+    ".": {
+      "import": "./dist/y-webrtc-trystero.mjs",
+      "require": "./dist/y-webrtc-trystero.cjs",
+      "types": "./dist/types/src/y-webrtc-trystero.d.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "types/src/y-webrtc-trystero.d.ts"
+      ]
+    }
   },
   "scripts": {
-    "clean": "rm -rf dist",
+    "release": "bash scripts/release.sh",
+    "clean": "rm -rf dist types",
     "start": "cd demo && npm run dev",
     "demo": "cd demo && npm run dev",
     "demo:build": "cd demo && npm run build",
     "deploy": "npm run demo:build && gh-pages -d demo/dist",
-    "dist": "rollup -c",
+    "build": "npm run clean && npm run types && rollup -c",
     "types": "tsc",
     "watch": "rollup -wc",
     "test": "npm run test:run",
@@ -36,13 +45,14 @@
     "lint": "standard && tsc",
     "lint:fix": "standard --fix",
     "format": "standard --fix",
-    "preversion": "npm run clean && npm run lint && npm test && npm run dist && npm run types",
-    "release": "standard-version",
-    "release:minor": "npm run release -- --release-as minor",
-    "release:patch": "npm run release -- --release-as patch",
-    "release:major": "npm run release -- --release-as major",
-    "release:beta": "npm run release -- --prerelease beta",
-    "release:alpha": "npm run release -- --prerelease alpha"
+    "prepublishOnly": "npm run build",
+    "preversion": "npm run clean && npm run lint && npm test && npm run build",
+    "release:standard": "standard-version",
+    "release:minor": "npm run release:standard -- --release-as minor",
+    "release:patch": "npm run release:standard -- --release-as patch",
+    "release:major": "npm run release:standard -- --release-as major",
+    "release:beta": "npm run release:standard -- --prerelease beta",
+    "release:alpha": "npm run release:standard -- --prerelease alpha"
   },
   "files": [
     "dist/*",
@@ -69,18 +79,35 @@
       "/node_modules"
     ]
   },
+  "peerDependencies": {
+    "trystero": "^0.21.5",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.8"
+  },
+  "peerDependenciesMeta": {
+    "trystero": {
+      "optional": false
+    },
+    "yjs": {
+      "optional": false
+    },
+    "y-protocols": {
+      "optional": false
+    }
+  },
   "dependencies": {
-    "lib0": "^0.2.42",
-    "y-protocols": "^1.0.6"
+    "lib0": "^0.2.42"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^11.1.0",
     "@rollup/plugin-node-resolve": "^7.1.3",
+    "@types/node": "^24.0.1",
     "concurrently": "^5.3.0",
+    "cpy-cli": "^5.0.0",
     "gh-pages": "^6.1.1",
     "http-server": "^0.12.3",
     "lit-html": "^1.1.0",
-    "nodemon": "^3.1.10",
+    "nodemon": "3.1.10",
     "rollup": "^1.32.1",
     "rollup-cli": "^1.0.9",
     "rollup-plugin-copy": "^3.5.0",
@@ -89,12 +116,7 @@
     "rollup-plugin-terser": "^5.3.1",
     "standard": "^14.3.4",
     "standard-version": "^9.5.0",
-    "typescript": "^4.4.4",
-    "yjs": "^13.6.8"
-  },
-  "peerDependencies": {
-    "trystero": "^0.21.5",
-    "yjs": "^13.6.8"
+    "typescript": "^5.8.3"
   },
   "optionalDependencies": {
     "ws": "^8.14.2"

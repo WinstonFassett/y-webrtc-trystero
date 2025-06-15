@@ -1,20 +1,37 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "target": "es2018",
-    "lib": ["es2018", "dom"],                             /* Specify library files to be included in the compilation. */
-    "allowJs": true,                       /* Allow javascript files to be compiled. */
-    "checkJs": true,                       /* Report errors in .js files. */
+    "module": "esnext",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "./",
+    "declarationMap": true,
+    "declarationDir": "dist/types",
     "emitDeclarationOnly": true,
-    "strict": false,
-    "noImplicitAny": false,
-    "moduleResolution": "node",            /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */
-    "baseUrl": "./",                       /* Base directory to resolve non-absolute module names. */
+    "outDir": "dist",
+    "lib": ["es2018", "dom"],
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "paths": {
-    }
+      "yjs": ["node_modules/yjs"],
+      "y-protocols/*": ["node_modules/y-protocols/*"]
+    },
+    "preserveSymlinks": true
   },
-  "include": ["./src/y-webrtc-trystero.js"],
-  "exclude": ["./node_modules/trystero/*"]
+  "include": ["src/**/*.js"],
+  "exclude": ["node_modules", "dist", "**/*.test.js"]
 }
