@@ -1,6 +1,6 @@
 {
   "name": "y-webrtc-trystero",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "description": "y-webrtc fork that uses Trystero for WebRTC connections and end-to-end encryption",
   "author": "Winston Fassett <dev@winstonfassett.com>",
   "license": "MIT",
