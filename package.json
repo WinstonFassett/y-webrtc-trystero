@@ -30,6 +30,7 @@
     }
   },
   "scripts": {
+    "release": "bash scripts/release.sh",
     "clean": "rm -rf dist types",
     "start": "cd demo && npm run dev",
     "demo": "cd demo && npm run dev",
@@ -46,12 +47,12 @@
     "format": "standard --fix",
     "prepublishOnly": "npm run build",
     "preversion": "npm run clean && npm run lint && npm test && npm run build",
-    "release": "standard-version",
-    "release:minor": "npm run release -- --release-as minor",
-    "release:patch": "npm run release -- --release-as patch",
-    "release:major": "npm run release -- --release-as major",
-    "release:beta": "npm run release -- --prerelease beta",
-    "release:alpha": "npm run release -- --prerelease alpha"
+    "release:standard": "standard-version",
+    "release:minor": "npm run release:standard -- --release-as minor",
+    "release:patch": "npm run release:standard -- --release-as patch",
+    "release:major": "npm run release:standard -- --release-as major",
+    "release:beta": "npm run release:standard -- --prerelease beta",
+    "release:alpha": "npm run release:standard -- --prerelease alpha"
   },
   "files": [
     "dist/*",
