@@ -6,25 +6,19 @@ import * as logging from 'lib0/logging'
 import * as map from 'lib0/map'
 import * as math from 'lib0/math'
 import { createMutex } from 'lib0/mutex'
-import { ObservableV2 } from 'lib0/observable'
+import { ObservableV2 as ObservableV2Base } from 'lib0/observable'
 import * as random from 'lib0/random'
 
 import { selfId, joinRoom as defaultJoinRoom } from 'trystero'
 
 /**
  * @typedef {import('trystero').Room} TrysteroRoom
+ * @typedef {import('yjs').Doc} YDoc
+ * @typedef {import('y-protocols/awareness').Awareness} Awareness
  */
 
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as syncProtocol from 'y-protocols/sync'
-
-/**
- * @typedef {import('yjs').Doc} YDoc
- */
-
-/**
- * @typedef {import('y-protocols/awareness').Awareness} Awareness
- */
 
 const log = logging.createModuleLogger('y-webrtc-trystero')
 
@@ -33,6 +27,7 @@ const messageQueryAwareness = 3
 const messageAwareness = 1
 const messageBcPeerId = 4
 
+// Re-export for convenience
 export { selfId }
 
 /**
@@ -40,6 +35,10 @@ export { selfId }
  */
 export const rooms = new Map()
 
+/**
+ * @param {string} roomId - The ID of the room to get
+ * @return {TrysteroDocRoom | undefined} The room if it exists
+ */
 export const getRoom = (roomId) => rooms.get(roomId)
 
 /**
@@ -395,19 +394,22 @@ export class TrysteroDocRoom {
     provider.trystero.onPeerJoin((peerId) => {
       log(`${peerId} joined`)
       if (this.trysteroConns.size < provider.maxConns) {
-        map.setIfUndefined(this.trysteroConns, peerId, () => new TrysteroConn(peerId, provider.room))
+        map.setIfUndefined(this.trysteroConns, peerId, () => {
+          if (!provider.room) throw new Error('Room not initialized')
+          return new TrysteroConn(peerId, provider.room)
+        })
       }
     })
     provider.trystero.onPeerLeave((peerId) => {
       const conn = this.trysteroConns.get(peerId)
-      conn.onClose()
+      conn?.onClose()
       if (this.trysteroConns.has(peerId)) {
         this.trysteroConns.delete(peerId)
         this.provider.emit('peers', [
           {
             removed: [peerId],
             added: [],
-            trysteroPeers: Array.from(provider.room.trysteroConns.keys()),
+            trysteroPeers: provider.room ? Array.from(provider.room.trysteroConns.keys()) : [],
             bcPeers: Array.from(this.bcConns)
           }
         ])
@@ -492,25 +494,37 @@ const openRoom = (doc, provider, name, password) => {
 
 /**
  * @typedef {Object} ProviderOptions
- * @property {string} appId - The Trystero app ID.
- * @property {TrysteroRoom | undefined} trysteroRoom? - The TrysteroRoom instance.
- * @property {((opts: Parameters<typeof defaultJoinRoom>[0], roomId: string) => TrysteroRoom) | undefined} joinRoom? - Function to join a Trystero room. Takes a config object and roomId as parameters.
- * @property {string} [password] - Optional password for encryption
- * @property {Awareness} [awareness] - Awareness instance
- * @property {number} [maxConns] - Maximum number of connections
- * @property {boolean} [filterBcConns] - Whether to filter broadcast connections
- * @property {'view' | 'edit'} [accessLevel] - Access level for the document ('view' or 'edit')
- * @property {any} [peerOpts]
+ * @property {string} [appId] - The Trystero app ID. Defaults to 'y-webrtc-trystero-app'.
+ * @property {TrysteroRoom} [trysteroRoom] - The TrysteroRoom instance. If not provided, one will be created.
+ * @property {(opts: any, roomId: string) => TrysteroRoom} [joinRoom] - Function to join a Trystero room.
+ * @property {string} [password] - Optional password for encryption.
+ * @property {Awareness} [awareness] - Awareness instance. If not provided, a new one will be created.
+ * @property {number} [maxConns=20 + Math.floor(Math.random() * 15)] - Maximum number of connections.
+ * @property {boolean} [filterBcConns=true] - Whether to filter broadcast connections.
+ * @property {'view' | 'edit'} [accessLevel='edit'] - Access level for the document ('view' or 'edit').
+ * @property {any} [peerOpts] - Additional peer options.
  */
+
+// Export types for TypeScript consumers
+export {};
 
 /**
  * @typedef {Object} TrysteroProviderEvents
- * @property {function({connected:boolean}):void} TrysteroProviderEvent.status
- * @property {function({synced:boolean}):void} TrysteroProviderEvent.synced
- * @property {function({added:Array<string>,removed:Array<string>,trysteroPeers:Array<string>,bcPeers:Array<string>}):void} TrysteroProviderEvent.peers
+ * @property {(event: { connected: boolean }) => void} status - Emitted when connection status changes.
+ * @property {(event: { synced: boolean }) => void} synced - Emitted when sync status changes.
+ * @property {() => void} destroy - Emitted when the provider is destroyed.
+ * @property {(event: {
+ *   added: string[],
+ *   removed: string[],
+ *   trysteroPeers: string[],
+ *   bcPeers: string[]
+ * }) => void} peers - Emitted when peer list changes.
  */
 
-export class TrysteroProvider extends ObservableV2 {
+/** @typedef {import('lib0/observable').ObservableV2<TrysteroProviderEvents>} ObservableV2 */
+
+/** @extends {ObservableV2Base<TrysteroProviderEvents>} */
+export class TrysteroProvider extends ObservableV2Base {
   /**
    * @class
    * @classdesc Represents a Y.Trystero instance.
@@ -525,7 +539,7 @@ export class TrysteroProvider extends ObservableV2 {
       appId,
       password,
       joinRoom,
-      trysteroRoom = joinRoom({ appId, password }, roomName),
+      trysteroRoom = (joinRoom || defaultJoinRoom)({ appId: appId || 'y-webrtc-trystero-app', password }, roomName),
       awareness = new awarenessProtocol.Awareness(doc),
       maxConns = 20 + math.floor(random.rand() * 15), // the random factor reduces the chance that n clients form a cluster
       filterBcConns = true,
