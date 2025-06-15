@@ -402,7 +402,7 @@ export class TrysteroDocRoom {
     })
     provider.trystero.onPeerLeave((peerId) => {
       const conn = this.trysteroConns.get(peerId)
-      conn?.onClose()
+      if (conn) conn.onClose()
       if (this.trysteroConns.has(peerId)) {
         this.trysteroConns.delete(peerId)
         this.provider.emit('peers', [
@@ -499,14 +499,14 @@ const openRoom = (doc, provider, name, password) => {
  * @property {(opts: any, roomId: string) => TrysteroRoom} [joinRoom] - Function to join a Trystero room.
  * @property {string} [password] - Optional password for encryption.
  * @property {Awareness} [awareness] - Awareness instance. If not provided, a new one will be created.
- * @property {number} [maxConns=20 + Math.floor(Math.random() * 15)] - Maximum number of connections.
+ * @property {number} [maxConns] - Maximum number of connections. Defaults to a random number between 20-34.
  * @property {boolean} [filterBcConns=true] - Whether to filter broadcast connections.
  * @property {'view' | 'edit'} [accessLevel='edit'] - Access level for the document ('view' or 'edit').
  * @property {any} [peerOpts] - Additional peer options.
  */
 
 // Export types for TypeScript consumers
-export {};
+export {}
 
 /**
  * @typedef {Object} TrysteroProviderEvents
