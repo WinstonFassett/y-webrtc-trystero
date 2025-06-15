@@ -7,9 +7,9 @@
   "homepage": "https://github.com/WinstonFassett/y-webrtc-trystero#readme",
   "type": "module",
   "main": "dist/y-webrtc-trystero.cjs",
-  "module": "src/y-webrtc-trystero.js",
-  "types": "dist/types/y-webrtc-trystero.d.ts",
-  "unpkg": "src/y-webrtc-trystero.mjs",
+  "module": "dist/y-webrtc-trystero.mjs",
+  "types": "dist/types/src/y-webrtc-trystero.d.ts",
+  "unpkg": "dist/y-webrtc-trystero.mjs",
   "sideEffects": false,
   "funding": {
     "type": "GitHub Sponsors ❤",
@@ -17,9 +17,9 @@
   },
   "exports": {
     ".": {
-      "import": "./src/y-webrtc-trystero.js",
+      "import": "./dist/y-webrtc-trystero.mjs",
       "require": "./dist/y-webrtc-trystero.cjs",
-      "types": "./types/src/y-webrtc-trystero.d.ts"
+      "types": "./dist/types/src/y-webrtc-trystero.d.ts"
     }
   },
   "typesVersions": {
@@ -80,8 +80,8 @@
   },
   "peerDependencies": {
     "trystero": "^0.21.5",
-    "yjs": "^13.6.8",
-    "y-protocols": "^1.0.6"
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.8"
   },
   "peerDependenciesMeta": {
     "trystero": {

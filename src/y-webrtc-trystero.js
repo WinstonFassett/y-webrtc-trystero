@@ -10,22 +10,21 @@ import { ObservableV2 as ObservableV2Base } from 'lib0/observable'
 import * as random from 'lib0/random'
 
 import { selfId, joinRoom as defaultJoinRoom } from 'trystero'
-
-/**
- * @typedef {import('trystero').Room} TrysteroRoom
- * @typedef {import('yjs').Doc} YDoc
- * @typedef {import('y-protocols/awareness').Awareness} Awareness
- */
-
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as syncProtocol from 'y-protocols/sync'
 
-const log = logging.createModuleLogger('y-webrtc-trystero')
+// Type definitions
+/** @typedef {import('yjs').Doc} YDoc */
+/** @typedef {import('y-protocols/awareness').Awareness} Awareness */
+/** @typedef {import('trystero').Room} TrysteroRoom */
 
+// Message types - these match y-protocols/constants
 const messageSync = 0
-const messageQueryAwareness = 3
 const messageAwareness = 1
+const messageQueryAwareness = 3
 const messageBcPeerId = 4
+
+const log = logging.createModuleLogger('y-webrtc-trystero')
 
 // Re-export for convenience
 export { selfId }

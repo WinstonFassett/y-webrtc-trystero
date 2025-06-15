@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "target": "es2018",
     "module": "esnext",
     "moduleResolution": "node",
@@ -10,7 +11,7 @@
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
+    "strictPropertyInitialization": false,
     "noImplicitThis": true,
     "alwaysStrict": true,
     "esModuleInterop": true,
@@ -18,11 +19,18 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "declarationMap": true,
-    "declarationDir": "types",
+    "declarationDir": "dist/types",
     "emitDeclarationOnly": true,
-    "outDir": "dist/types",
+    "outDir": "dist",
     "lib": ["es2018", "dom"],
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "paths": {
+      "yjs": ["node_modules/yjs"],
+      "y-protocols/*": ["node_modules/y-protocols/*"]
+    },
+    "preserveSymlinks": true
   },
   "include": ["src/**/*.js"],
   "exclude": ["node_modules", "dist", "**/*.test.js"]
