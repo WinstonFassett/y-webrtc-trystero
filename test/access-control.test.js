@@ -18,13 +18,13 @@ export const testAccessControl = async tc => {
   const trysteroRoom = createMockTrysteroRoom()
 
   // Create providers with different access levels
-  const provider1 = new TrysteroProvider(roomName, doc1, 
-  {
-    appId: 'test-app',
-    
-    trysteroRoom,
-    accessLevel: 'edit'
-  })
+  const provider1 = new TrysteroProvider(roomName, doc1,
+    {
+      appId: 'test-app',
+
+      trysteroRoom,
+      accessLevel: 'edit'
+    })
 
   // Simulate peer connection
   trysteroRoom._triggerPeerJoin('peer1')
