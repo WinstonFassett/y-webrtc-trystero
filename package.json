@@ -78,9 +78,24 @@
       "/node_modules"
     ]
   },
-  "dependencies": {
-    "lib0": "^0.2.42",
+  "peerDependencies": {
+    "trystero": "^0.21.5",
+    "yjs": "^13.6.8",
     "y-protocols": "^1.0.6"
+  },
+  "peerDependenciesMeta": {
+    "trystero": {
+      "optional": false
+    },
+    "yjs": {
+      "optional": false
+    },
+    "y-protocols": {
+      "optional": false
+    }
+  },
+  "dependencies": {
+    "lib0": "^0.2.42"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^11.1.0",
@@ -91,7 +106,7 @@
     "gh-pages": "^6.1.1",
     "http-server": "^0.12.3",
     "lit-html": "^1.1.0",
-    "nodemon": "^3.1.10",
+    "nodemon": "3.1.10",
     "rollup": "^1.32.1",
     "rollup-cli": "^1.0.9",
     "rollup-plugin-copy": "^3.5.0",
@@ -100,12 +115,7 @@
     "rollup-plugin-terser": "^5.3.1",
     "standard": "^14.3.4",
     "standard-version": "^9.5.0",
-    "typescript": "^5.8.3",
-    "yjs": "^13.6.8"
-  },
-  "peerDependencies": {
-    "trystero": "^0.21.5",
-    "yjs": "^13.6.8"
+    "typescript": "^5.8.3"
   },
   "optionalDependencies": {
     "ws": "^8.14.2"
