@@ -1,8 +1,8 @@
 {
   "name": "y-webrtc-trystero",
   "version": "10.3.0-20250613-beta.1",
-  "description": "Yjs provider using Trystero for WebRTC signaling",
-  "author": "Winston Fassett <winston.fassett@gmail.com>",
+  "description": "y-webrtc fork that uses Trystero for WebRTC connections and end-to-end encryption",
+  "author": "Winston Fassett <dev@winstonfassett.com>",
   "license": "MIT",
   "homepage": "https://github.com/WinstonFassett/y-webrtc-trystero#readme",
   "type": "module",
@@ -58,7 +58,10 @@
   "keywords": [
     "Yjs",
     "Trystero",
-    "WebRTC"
+    "WebRTC",
+    "end-to-end encryption",
+    "peer-to-peer",
+    "real-time collaboration"
   ],
   "standard": {
     "ignore": [

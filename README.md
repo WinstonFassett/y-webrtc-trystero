@@ -1,15 +1,12 @@
 # y-webrtc-trystero
 
-> Fork of y-webrtc with Trystero as the WebRTC signaling mechanism
+> [Trystero](https://github.com/dmotz/trystero) provider for [Yjs](https://github.com/yjs/yjs)
 
-A WebRTC connector for [Yjs](https://github.com/yjs/yjs) that uses [Trystero](https://github.com/dmotz/trystero) for signaling.
+This is fork of [y-webrtc](https://github.com/yjs/y-webrtc) that uses [Trystero](https://github.com/dmotz/trystero) for WebRTC connections and end-to-end encryption.
 
-## About This Fork
-
-This is a fork of the original [y-webrtc](https://github.com/yjs/y-webrtc) that replaces the default signaling mechanism with [Trystero](https://github.com/dmotz/trystero). This provides more flexibility in signaling server configuration and additional features like room discovery.
-
-### Key Differences from Original
+### Key Differences from y-webrtc
 - Uses Trystero for signaling instead of the default signaling servers
+- Uses Trystero's end-to-end encryption instead of y-webrtc's crypto.js encryption
 - Supports all Trystero backends (Firebase, IPFS, etc.)
 - Maintains the same Yjs provider interface for easy migration
 
@@ -71,11 +68,12 @@ doc.on('sync', isSynced => {
 
 ### Key Features
 
-* Fast message propagation using WebRTC
+* No server required!
 * Built-in end-to-end encryption (always enabled)
-* Works with any Trystero backend (Firebase, IPFS, etc.)
+* Fast message propagation using WebRTC
 * Low server load with peer-to-peer connections
 * Automatic reconnection and sync status tracking
+* Works with any Trystero backend (Firebase, IPFS, etc.)
 
 ## Setup
 
