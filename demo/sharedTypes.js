@@ -25,8 +25,8 @@ export const trysteroRoom = joinRoom({
 export const trysteroProvider = new TrysteroProvider(
   ROOM_ID,
   doc,
-  trysteroRoom,
   {
+    trysteroRoom,
     password: ROOM_PASSWORD,
     accessLevel: 'edit' // Allow editing by default
   }

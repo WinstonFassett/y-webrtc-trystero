@@ -9,7 +9,7 @@ import { createMutex } from 'lib0/mutex'
 import { ObservableV2 } from 'lib0/observable'
 import * as random from 'lib0/random'
 
-import { selfId } from 'trystero'
+import { selfId, joinRoom as defaultJoinRoom } from 'trystero'
 
 /**
  * @typedef {import('trystero').Room} TrysteroRoom
@@ -492,7 +492,9 @@ const openRoom = (doc, provider, name, password) => {
 
 /**
  * @typedef {Object} ProviderOptions
- * @property {Array<string>} [signaling] - Array of signaling server URLs
+ * @property {string} appId - The Trystero app ID.
+ * @property {TrysteroRoom | undefined} trysteroRoom? - The TrysteroRoom instance.
+ * @property {((opts: Parameters<typeof defaultJoinRoom>[0], roomId: string) => TrysteroRoom) | undefined} joinRoom? - Function to join a Trystero room. Takes a config object and roomId as parameters.
  * @property {string} [password] - Optional password for encryption
  * @property {Awareness} [awareness] - Awareness instance
  * @property {number} [maxConns] - Maximum number of connections
@@ -514,20 +516,30 @@ export class TrysteroProvider extends ObservableV2 {
    * @classdesc Represents a Y.Trystero instance.
    * @param {string} roomName - The name of the room.
    * @param {YDoc} doc - The Y.Doc instance.
-   * @param {TrysteroRoom} trysteroRoom - The TrysteroRoom instance.
    * @param {ProviderOptions} opts
    */
   constructor (
     roomName,
     doc,
-    trysteroRoom,
     {
+      appId,
       password,
+      joinRoom,
+      trysteroRoom = joinRoom({ appId, password }, roomName),
       awareness = new awarenessProtocol.Awareness(doc),
       maxConns = 20 + math.floor(random.rand() * 15), // the random factor reduces the chance that n clients form a cluster
       filterBcConns = true,
       accessLevel = 'edit' // Default to 'edit' for backward compatibility
-    } = {}
+    } = {
+      appId: 'y-webrtc-trystero-app',
+      password: undefined,
+      joinRoom: defaultJoinRoom,
+      trysteroRoom: undefined,
+      awareness: new awarenessProtocol.Awareness(doc),
+      maxConns: 20 + math.floor(random.rand() * 15),
+      filterBcConns: true,
+      accessLevel: 'edit'
+    }
   ) {
     super()
     this.doc = doc

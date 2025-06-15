@@ -15,22 +15,28 @@ export const testAccessControl = async tc => {
   const doc2 = new Y.Doc()
 
   // Create mock Trystero room with test utilities
-  const mockTrysteroRoom = createMockTrysteroRoom()
+  const trysteroRoom = createMockTrysteroRoom()
 
   // Create providers with different access levels
-  const provider1 = new TrysteroProvider(roomName, doc1, mockTrysteroRoom, {
+  const provider1 = new TrysteroProvider(roomName, doc1, 
+  {
+    appId: 'test-app',
+    
+    trysteroRoom,
     accessLevel: 'edit'
   })
 
   // Simulate peer connection
-  mockTrysteroRoom._triggerPeerJoin('peer1')
+  trysteroRoom._triggerPeerJoin('peer1')
 
-  const provider2 = new TrysteroProvider(roomName, doc2, mockTrysteroRoom, {
+  const provider2 = new TrysteroProvider(roomName, doc2, {
+    appId: 'test-app',
+    trysteroRoom,
     accessLevel: 'view'
   })
 
   // Simulate second peer connection
-  mockTrysteroRoom._triggerPeerJoin('peer2')
+  trysteroRoom._triggerPeerJoin('peer2')
 
   // Test that editor can modify the document
   const yarray1 = doc1.get('array', Y.Array)
@@ -63,8 +69,8 @@ export const testAccessControl = async tc => {
   }
 
   // Clean up
-  mockTrysteroRoom._triggerPeerLeave('peer1')
-  mockTrysteroRoom._triggerPeerLeave('peer2')
+  trysteroRoom._triggerPeerLeave('peer1')
+  trysteroRoom._triggerPeerLeave('peer2')
   provider1.destroy()
   provider2.destroy()
   doc1.destroy()

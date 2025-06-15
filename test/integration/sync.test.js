@@ -31,12 +31,16 @@ export const testBasicSync = async tc => {
   })
 
   // Create two providers that should sync
-  const provider1 = new TrysteroProvider(roomName, doc1, room1, {
+  const provider1 = new TrysteroProvider(roomName, doc1 , {
+    appId: 'test-app',
+    trysteroRoom: room1,
     accessLevel: 'edit'
   })
   room1._triggerPeerJoin('peer1')
 
-  const provider2 = new TrysteroProvider(roomName, doc2, room2, {
+  const provider2 = new TrysteroProvider(roomName, doc2, {
+    appId: 'test-app',
+    trysteroRoom: room2,
     accessLevel: 'edit'
   })
   room2._triggerPeerJoin('peer2')

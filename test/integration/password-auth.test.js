@@ -41,21 +41,27 @@ export const testPasswordAuth = async tc => {
   connectRooms(room1, room2)
 
   // Create providers with different passwords
-  const provider1 = new TrysteroProvider(roomName, doc1, room1, {
+  const provider1 = new TrysteroProvider(roomName, doc1, {
+    appId: 'test-app',
+    trysteroRoom: room1,
     password: 'correct-password',
     accessLevel: 'edit'
   })
   room1._triggerPeerJoin('peer1')
 
   // Same password - should connect
-  const provider2 = new TrysteroProvider(roomName, doc2, room2, {
+  const provider2 = new TrysteroProvider(roomName, doc2, {
+    appId: 'test-app',
+    trysteroRoom: room2,
     password: 'correct-password',
     accessLevel: 'edit'
   })
   room2._triggerPeerJoin('peer2')
 
   // Different password - should not connect
-  const provider3 = new TrysteroProvider(roomName, doc3, room3, {
+  const provider3 = new TrysteroProvider(roomName, doc3, {
+    appId: 'test-app',
+    trysteroRoom: room3,
     password: 'wrong-password',
     accessLevel: 'edit'
   })

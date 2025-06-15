@@ -44,15 +44,50 @@ const trysteroRoom = joinRoom({
   password: ROOM_PASSWORD // Optional: Add a password for room access
 }, ROOM_ID)
 
-// Create the provider
-const provider = new TrysteroProvider(
+// Method 1: Simple connection with just appId and room name
+const provider1 = new TrysteroProvider(
   ROOM_ID,      // Room identifier
   doc,           // Y.Doc instance
-  trysteroRoom,  // Trystero room instance
   {
-    password: ROOM_PASSWORD, // Optional: same password used in joinRoom
-    maxConns: 30,             // Optional: maximum peer connections
+    appId: APP_ID,        // Required: Your Trystero app ID
+    password: ROOM_PASSWORD, // Optional: password for room access
+    maxConns: 30,           // Optional: maximum peer connections
     awareness: new awarenessProtocol.Awareness(doc) // Optional: awareness protocol
+  }
+)
+
+// Method 2: Custom joinRoom function for advanced configuration
+const provider2 = new TrysteroProvider(
+  ROOM_ID,
+  doc,
+  {
+    appId: APP_ID,
+    // Custom function to create the Trystero room
+    joinRoom: (config, roomId) => {
+      return joinRoom({
+        ...config,
+        // Add custom Trystero configuration
+        appId: config.appId,
+        password: ROOM_PASSWORD,
+        // Add any other Trystero options here
+      }, roomId)
+    },
+    maxConns: 30
+  }
+)
+
+// Method 3: Use an existing TrysteroRoom instance
+const trysteroRoom = joinRoom({ 
+  appId: APP_ID,
+  password: ROOM_PASSWORD 
+}, ROOM_ID)
+
+const provider3 = new TrysteroProvider(
+  ROOM_ID,
+  doc,
+  {
+    trysteroRoom,  // Use pre-configured room
+    maxConns: 30
   }
 )
 
@@ -87,7 +122,10 @@ npm install y-webrtc-trystero trystero yjs
 y-webrtc-trystero is restricted by the number of peers that the web browser can create. By default, every client is connected to every other client up until the maximum number of conns is reached. The clients will still sync if every client is connected at least indirectly to every other client. Theoretically, y-webrtc-trystero allows an unlimited number of users, but at some point it can't be guaranteed anymore that the clients sync any longer. The default maximum connections is set to `20 + math.floor(random.rand() * 15)` peers. The random factor helps prevent clients from forming isolated clusters. You can adjust this using the `maxConns` option. For example:
 
 ```js
-const provider = new TrysteroProvider('your-room-name', ydoc, trysteroRoom, { maxConns: 70 + math.floor(random.rand() * 70) })
+const provider = new TrysteroProvider('your-room-name', ydoc, { 
+  appId: 'your-app-id',
+  maxConns: 70 + math.floor(random.rand() * 70) 
+})
 ```
 
 ** A gifted mind could use this as an exercise and calculate the probability of clusters forming depending on the number of peers in the network. The default value was used to connect at least 100 clients at a conference meeting on a bad network connection.
@@ -99,14 +137,31 @@ Just listen to the "peers" event from the provider to listen for more incoming W
 ## API
 
 ```js
-new TrysteroProvider(roomName, ydoc, trysteroRoom, [, opts])
+new TrysteroProvider(roomName, ydoc, [, opts])
 ```
 
 The following default values of `opts` can be overwritten:
 
 ```js
 {
-  // If password is a string, it will be used to encrypt all communication over the signaling servers.
+  // Connection Options (choose one of the following):
+  
+  // Option 1: Simple connection with appId (recommended for most cases)
+  appId: 'y-webrtc-trystero-app',  // Required: Your Trystero app ID
+  
+  // Option 2: Custom joinRoom function (for advanced configuration)
+  // joinRoom: (config, roomId) => {
+  //   return joinRoom({
+  //     ...config,
+  //     // Add custom Trystero configuration here
+  //   }, roomId)
+  // },
+  
+  // Option 3: Use an existing TrysteroRoom instance
+  // trysteroRoom: yourTrysteroRoomInstance,
+  
+  // Optional: Password for room access and encryption
+  // If provided, it will be used to encrypt all communication over the signaling servers.
   // No sensitive information (WebRTC connection info, shared data) will be shared over the signaling servers.
   // The main objective is to prevent man-in-the-middle attacks and to allow you to securely use public / untrusted signaling instances.
   password: null,
