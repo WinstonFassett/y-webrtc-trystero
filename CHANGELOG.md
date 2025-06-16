@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-beta.3](https://github.com/WinstonFassett/y-webrtc-trystero/compare/v0.1.0-beta.1...v0.1.0-beta.3) (2025-06-16)
+
+
+### 🚚 Chores
+
+* **release:** 0.1.0-beta.2 ([033edee](https://github.com/WinstonFassett/y-webrtc-trystero/commit/033edeefd6bc34087a4b5a9080eac876a8188e37))
+
 ## [0.1.0-beta.2](https://github.com/WinstonFassett/y-webrtc-trystero/compare/v0.1.0-beta.1...v0.1.0-beta.2) (2025-06-15)
 
 ## [0.1.0-beta.1](https://github.com/WinstonFassett/y-webrtc-trystero/compare/v10.3.0...v0.1.0-beta.1) (2025-06-15)

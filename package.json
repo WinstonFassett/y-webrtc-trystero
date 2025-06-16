@@ -1,6 +1,6 @@
 {
-  "name": "y-webrtc-trystero",
-  "version": "0.1.0-beta.2",
+  "name": "@winstonfassett/y-webrtc-trystero",
+  "version": "0.1.0-beta.3",
   "description": "y-webrtc fork that uses Trystero for WebRTC connections and end-to-end encryption",
   "author": "Winston Fassett <dev@winstonfassett.com>",
   "license": "MIT",
@@ -8,7 +8,7 @@
   "type": "module",
   "main": "dist/y-webrtc-trystero.cjs",
   "module": "dist/y-webrtc-trystero.mjs",
-  "types": "dist/types/src/y-webrtc-trystero.d.ts",
+  "types": "dist/types/y-webrtc-trystero.d.ts",
   "unpkg": "dist/y-webrtc-trystero.mjs",
   "sideEffects": false,
   "funding": {
@@ -19,13 +19,13 @@
     ".": {
       "import": "./dist/y-webrtc-trystero.mjs",
       "require": "./dist/y-webrtc-trystero.cjs",
-      "types": "./dist/types/src/y-webrtc-trystero.d.ts"
+      "types": "./dist/types/y-webrtc-trystero.d.ts"
     }
   },
   "typesVersions": {
     "*": {
       "*": [
-        "types/src/y-webrtc-trystero.d.ts"
+        "dist/types/y-webrtc-trystero.d.ts"
       ]
     }
   },
